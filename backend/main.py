@@ -220,9 +220,7 @@ def spawn_ancestor(x=None, y=None, name=None, sex=None, age_years=None):
     return org
 
 
-# Seed Initial Organisms: spawn 8 ancestors on first launch
-for _ in range(8):
-    spawn_ancestor()
+# No auto-spawn: organisms are placed manually by the Director
 
 
 def handle_mating(org_list: List[Organism]):
@@ -622,35 +620,43 @@ class LoadRequest(BaseModel):
 
 @app.get("/api/saves")
 def list_saves():
-    """Lists saved simulations with metadata."""
+    """Lists saved simulations using lightweight .meta.json sidecars (no pickle loading)."""
+    import json as _json
     files = glob.glob(os.path.join(SAVES_DIR, "*.pkl"))
     saves = []
     for filepath in files:
         filename = os.path.basename(filepath)
         save_id = filename[:-4]  # strip .pkl
+        meta_path = os.path.join(SAVES_DIR, f"{save_id}.meta.json")
         stats = os.stat(filepath)
         modified_time = stats.st_mtime
-        
-        try:
-            with open(filepath, 'rb') as f:
-                saved_state = pickle.load(f)
-                living_count = len([o for o in saved_state.get("organisms", []) if not o.is_dead])
-                pred_count = len([p for p in saved_state.get("predators", []) if not p.is_dead])
-                ticks_count = saved_state.get("ticks", 0)
-                years_count = round(ticks_count / 1296000.0, 1)
-        except Exception:
-            living_count = 0
-            pred_count = 0
-            years_count = 0.0
 
+        if os.path.exists(meta_path):
+            try:
+                with open(meta_path, 'r') as f:
+                    meta = _json.load(f)
+                saves.append({
+                    "id": save_id,
+                    "name": meta.get("name", save_id.replace("_", " ")),
+                    "timestamp": modified_time,
+                    "population": meta.get("population", 0),
+                    "predators": meta.get("predators", 0),
+                    "years": meta.get("years", 0.0)
+                })
+                continue
+            except Exception:
+                pass
+
+        # Fallback: no sidecar yet — use filename only, no pickle load
         saves.append({
             "id": save_id,
             "name": save_id.replace("_", " "),
             "timestamp": modified_time,
-            "population": living_count,
-            "predators": pred_count,
-            "years": years_count
+            "population": 0,
+            "predators": 0,
+            "years": 0.0
         })
+
     saves.sort(key=lambda x: x["timestamp"], reverse=True)
     return saves
 
@@ -690,6 +696,19 @@ def save_simulation(req: SaveRequest):
         try:
             with open(filepath, 'wb') as f:
                 pickle.dump(state, f)
+            # Write lightweight metadata sidecar so list_saves is instant
+            import json as _json
+            living_count = len([o for o in organisms if not o.is_dead])
+            pred_count = len([p for p in predators if not p.is_dead])
+            meta = {
+                "name": world_name,
+                "population": living_count,
+                "predators": pred_count,
+                "years": round(ticks / 1296000.0, 1)
+            }
+            meta_path = os.path.join(SAVES_DIR, f"{safe_name}.meta.json")
+            with open(meta_path, 'w') as f:
+                _json.dump(meta, f)
             add_log("SYSTEM", f"Simulation successfully saved as '{world_name}'.")
             return {"status": "SUCCESS", "id": safe_name}
         except Exception as e:
@@ -732,10 +751,13 @@ def load_simulation(req: LoadRequest):
 
 @app.post("/api/saves/delete")
 def delete_save(req: LoadRequest):
-    """Deletes a saved simulation."""
+    """Deletes a saved simulation and its metadata sidecar."""
     filepath = os.path.join(SAVES_DIR, f"{req.id}.pkl")
     if os.path.exists(filepath):
         os.remove(filepath)
+        meta_path = os.path.join(SAVES_DIR, f"{req.id}.meta.json")
+        if os.path.exists(meta_path):
+            os.remove(meta_path)
         return {"status": "SUCCESS"}
     return {"status": "ERROR", "message": "Save file not found"}
 
@@ -761,11 +783,7 @@ def new_simulation(req: SaveRequest):
         active_specimen_id = None
         _cat_scorecard = None
         world_name = req.name.strip() if req.name else "My Terrarium"
-        
-        # Seed 8 ancestor organisms so the world starts populated
-        for _ in range(8):
-            spawn_ancestor()
-        
+        # No auto-spawn: Director places organisms manually via the sandbox
         add_log("SYSTEM", f"A new primeval terrarium '{world_name}' has been initialized by the Director.")
     return {"status": "SUCCESS"}
 
