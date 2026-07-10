@@ -157,7 +157,9 @@ export const App: React.FC = () => {
   // ── Callbacks ─────────────────────────────────────────────────────
   const handleSelectOrganism = useCallback((id: string | null) => {
     setSelectedId(id);
-    wsRef.current?.send(JSON.stringify({ action: id ? 'select' : 'deselect', id }));
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ action: id ? 'select' : 'deselect', id }));
+    }
   }, []);
 
   const handleRename = useCallback((id: string, name: string) => {

@@ -410,21 +410,23 @@ class Organism:
 
         # 6. Motor action execution (MRS GREN actions)
         energy_action_cost = 0.0
+        hydration_action_cost = 0.0
 
         if action_idx == 0:  # MOVEMENT
             self.vx += math.cos(self.angle) * self.dna.speed * 0.18
             self.vy += math.sin(self.angle) * self.dna.speed * 0.18
-            energy_action_cost = 0.000005 * self.size_ratio
+            energy_action_cost = 0.0000296 * self.size_ratio
+            hydration_action_cost = 0.0000555 * self.size_ratio
 
         elif action_idx == 1:  # REPRODUCTION
             if self.get_lifecycle_stage() == 1 and self.mating_cooldown == 0:
                 self.has_mating_intent = True
-                energy_action_cost = 0.00001 * self.size_ratio
+                energy_action_cost = 0.0000370 * self.size_ratio
 
         elif action_idx == 2:  # SENSITIVITY (Rotate)
             turn_dir = 1.0 if random.random() > 0.5 else -1.0
             self.angle = (self.angle + 0.3 * turn_dir) % (2 * math.pi)
-            energy_action_cost = 0.000002 * self.size_ratio
+            energy_action_cost = 0.0000074 * self.size_ratio
 
         elif action_idx == 3:  # GROWTH
             if self.energy > self.max_energy * 0.5:
@@ -436,7 +438,7 @@ class Organism:
 
         elif action_idx == 4:  # EXCRETION
             self.waste_level = 0.0
-            energy_action_cost = 0.2
+            energy_action_cost = 0.5
 
         elif action_idx == 5:  # NUTRITION
             eaten = world.consume_food(self.x, self.y, max_eat=35.0, reach_dist=self.dna.size + 5.0)
@@ -457,5 +459,16 @@ class Organism:
 
         elif action_idx == 6:  # IDLE
             energy_action_cost = -self.energy_decay * 0.5
+            hydration_action_cost = -self.hydration_decay * 0.5
 
-        self.energy -= max(0.0, energy_action_cost)
+        elif action_idx == 7:  # COMMUNICATE
+            energy_action_cost = 0.00001 * self.size_ratio
+
+        # Waste accumulation
+        self.waste_level = min(1.0, self.waste_level + 0.0001)
+        if self.waste_level > 0.8:
+            energy_action_cost += 0.0001
+
+        # Apply metabolic cost of actions
+        self.energy -= energy_action_cost
+        self.hydration -= hydration_action_cost

@@ -139,7 +139,8 @@ class World:
         """Checks and handles collisions of an agent with static obstacles."""
         for obs in self.obstacles:
             dist = math.hypot(agent.x - obs['x'], agent.y - obs['y'])
-            min_dist = obs['radius'] + agent.size
+            agent_size = agent.dna.size if hasattr(agent, 'dna') else getattr(agent, 'size', 10.0)
+            min_dist = obs['radius'] + agent_size
             if dist < min_dist:
                 # Bounce agent back
                 dx = (agent.x - obs['x']) / (dist if dist > 0.1 else 1.0)
