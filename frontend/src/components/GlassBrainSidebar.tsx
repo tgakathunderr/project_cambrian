@@ -198,13 +198,15 @@ export const GlassBrainSidebar: React.FC<GlassBrainSidebarProps> = ({
 
           {/* Controls */}
           <div className="flex gap-1.5 shrink-0">
-            <button
-              onClick={() => onBiography(selected.id)}
-              title="View Biography"
-              className="w-7 h-7 rounded-lg bg-white/4 border border-white/6 flex items-center justify-center text-white/30 hover:text-[#dec2a0] hover:border-[#dec2a0]/20 transition-all"
-            >
-              <span className="material-symbols-outlined text-sm">menu_book</span>
-            </button>
+            {selected.sex !== 'PREDATOR' && (
+              <button
+                onClick={() => onBiography(selected.id)}
+                title="View Biography"
+                className="w-7 h-7 rounded-lg bg-white/4 border border-white/6 flex items-center justify-center text-white/30 hover:text-[#dec2a0] hover:border-[#dec2a0]/20 transition-all"
+              >
+                <span className="material-symbols-outlined text-sm">menu_book</span>
+              </button>
+            )}
             <button
               onClick={() => onZap(selected.id)}
               title="Remove specimen"

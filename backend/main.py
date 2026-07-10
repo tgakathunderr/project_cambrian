@@ -485,12 +485,18 @@ def rename_specimen(req: RenameRequest):
                     biographies[o.id]["name"] = req.name
                 add_log("SYSTEM", f"{old_name} was renamed to {o.name}.", organism_id=o.id)
                 return {"status": "SUCCESS"}
-    return {"status": "ERROR", "message": "Organism not found"}
+        for p in predators:
+            if p.id == req.id:
+                old_name = p.name
+                p.name = req.name
+                add_log("SYSTEM", f"{old_name} was renamed to {p.name}.")
+                return {"status": "SUCCESS"}
+    return {"status": "ERROR", "message": "Specimen not found"}
 
 
 @app.post("/api/zap")
 def zap_specimen(req: RenameRequest):
-    """God Mode Zap: immediately kills/deletes an organism."""
+    """God Mode Zap: immediately kills/deletes an organism or predator."""
     with sim_lock:
         for o in organisms:
             if o.id == req.id:
@@ -498,7 +504,12 @@ def zap_specimen(req: RenameRequest):
                 o.death_reason = 'ZAPPED'
                 add_log("DEATH", f"{o.name} was removed by the Director.", organism_id=o.id)
                 return {"status": "SUCCESS"}
-    return {"status": "ERROR", "message": "Organism not found"}
+        for p in predators:
+            if p.id == req.id:
+                p.is_dead = True
+                add_log("DEATH", f"Predator {p.name} was removed by the Director.")
+                return {"status": "SUCCESS"}
+    return {"status": "ERROR", "message": "Specimen not found"}
 
 
 @app.post("/api/settings")
@@ -688,7 +699,35 @@ async def websocket_endpoint(websocket: WebSocket):
                             "metabolism_trait": round(selected_org.dna.metabolism, 2),
                         }
                     else:
-                        active_specimen_id = None
+                        selected_pred = next((p for p in predators if p.id == active_specimen_id and not p.is_dead), None)
+                        if selected_pred:
+                            selected_telemetry = {
+                                "id": selected_pred.id,
+                                "name": selected_pred.name,
+                                "age": selected_pred.age,
+                                "generation": 1,
+                                "sex": "PREDATOR",
+                                "lifecycle": "Apex Hunter",
+                                "energy": round(selected_pred.energy, 1),
+                                "max_energy": round(selected_pred.max_energy, 1),
+                                "hydration": 100.0,
+                                "max_hydration": 100.0,
+                                "dopamine": round(selected_pred.dopamine_level, 2),
+                                "serotonin": round(selected_pred.serotonin_level, 2),
+                                "acetylcholine": round(selected_pred.acetylcholine_level, 2),
+                                "cortisol": round(selected_pred.cortisol_level, 2),
+                                "dominant_drive": 1 if selected_pred.energy < selected_pred.max_energy * 0.35 else (0 if selected_pred.last_action_idx == 6 else 5),
+                                "last_action": selected_pred.last_action_idx,
+                                "parent1_name": None,
+                                "parent2_name": None,
+                                "offspring_count": 0,
+                                "speed_trait": round(selected_pred.speed, 1),
+                                "vision_trait": 220.0,
+                                "size_trait": round(selected_pred.size, 1),
+                                "metabolism_trait": 1.0,
+                            }
+                        else:
+                            active_specimen_id = None
 
                 state_payload = {
                     "ticks": ticks,

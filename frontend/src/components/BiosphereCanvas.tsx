@@ -351,6 +351,7 @@ export const BiosphereCanvas: React.FC<BiosphereCanvasProps> = ({
 
     // 8. Predators
     preds.forEach(p => {
+      const isSelected = p.id === selId;
       const sz = p.size;
       // Pulsing threat ring
       const pulse = 1 + 0.15 * Math.sin(time * 0.1);
@@ -362,8 +363,19 @@ export const BiosphereCanvas: React.FC<BiosphereCanvasProps> = ({
       ctx.arc(p.x, p.y, sz * 3 * pulse, 0, Math.PI * 2);
       ctx.fill();
 
+      // Selection ring
+      if (isSelected) {
+        ctx.strokeStyle = '#dec2a0';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 3]);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, sz + 10, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
       ctx.fillStyle = 'rgba(93,0,10,0.8)';
-      ctx.strokeStyle = '#ffb4ab';
+      ctx.strokeStyle = isSelected ? '#dec2a0' : '#ffb4ab';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(p.x, p.y, sz, 0, Math.PI * 2);
@@ -371,12 +383,20 @@ export const BiosphereCanvas: React.FC<BiosphereCanvasProps> = ({
       ctx.stroke();
 
       // Direction spike
-      ctx.strokeStyle = '#ffb4ab';
+      ctx.strokeStyle = isSelected ? '#dec2a0' : '#ffb4ab';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(p.x, p.y);
       ctx.lineTo(p.x + Math.cos(p.angle) * (sz + 8), p.y + Math.sin(p.angle) * (sz + 8));
       ctx.stroke();
+
+      // Name tag
+      if (isSelected || z > 1.5) {
+        ctx.fillStyle = isSelected ? 'rgba(222,194,160,0.85)' : 'rgba(255,180,171,0.55)';
+        ctx.font = `${isSelected ? 'bold ' : ''}${Math.round(9 / z)}px Outfit, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(p.name, p.x, p.y + sz + 12 / z);
+      }
     });
 
     // 9. Birth rings
@@ -465,7 +485,9 @@ export const BiosphereCanvas: React.FC<BiosphereCanvasProps> = ({
       }
     } else {
       let clickedOrg: OrganismData | null = null;
+      let clickedPred: any = null;
       let minDist = 30.0;
+      
       orgsRef.current.forEach(o => {
         const dist = Math.hypot(o.x - simX, o.y - simY);
         if (dist < minDist && dist < o.size + 14) {
@@ -473,8 +495,20 @@ export const BiosphereCanvas: React.FC<BiosphereCanvasProps> = ({
           clickedOrg = o;
         }
       });
+      
+      predsRef.current.forEach(p => {
+        const dist = Math.hypot(p.x - simX, p.y - simY);
+        if (dist < minDist && dist < p.size + 14) {
+          minDist = dist;
+          clickedPred = p;
+          clickedOrg = null; // clicked predator over prey
+        }
+      });
+
       if (clickedOrg) {
         onSelectOrganism((clickedOrg as OrganismData).id);
+      } else if (clickedPred) {
+        onSelectOrganism(clickedPred.id);
       } else {
         onSelectOrganism(null);
       }
