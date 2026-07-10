@@ -243,6 +243,13 @@ class Predator:
                         self.energy = min(self.max_energy, self.energy + 50.0)
                         self._pending_reward += 1.0  # Reward to predator
                         success_bite = True
+                        
+                        if o.energy <= 0:
+                            o.is_dead = True
+                            o.death_reason = 'PREDATION'
+                            o.log_life_event(f"Hunted down and slain by {self.name}")
+                        else:
+                            o.log_life_event(f"Survived a vicious attack by {self.name}")
                         break
             
             if not success_bite:

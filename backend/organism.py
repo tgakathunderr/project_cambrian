@@ -93,6 +93,8 @@ class Organism:
         self._first_meal_logged = False
         self._first_reproduction_logged = False
         self._catastrophe_survived = []  # names of survived catastrophes
+        self._near_starvation_alert = False
+        self._near_dehydration_alert = False
 
     def log_life_event(self, event: str):
         """Records a notable life event for the biography system."""
@@ -351,6 +353,25 @@ class Organism:
             self.ticks_since_last_move = 0
             self.explore_timer = max(0.0, self.explore_timer - 0.05)
         self.last_x, self.last_y = self.x, self.y
+
+        # Dynamic Age Milestones
+        if self.age == 15552000:
+            self.log_life_event("Reached biological maturity — entered adulthood")
+        elif self.age == 77760000:
+            self.log_life_event("Entered elder age — genetic metabolic efficiency began to decline")
+
+        # Near-Death & Recovery Tracking
+        if self.energy < self.max_energy * 0.15:
+            self._near_starvation_alert = True
+        elif self.energy > self.max_energy * 0.50 and self._near_starvation_alert:
+            self._near_starvation_alert = False
+            self.log_life_event("Narrowly survived a period of critical starvation")
+
+        if self.hydration < self.max_hydration * 0.15:
+            self._near_dehydration_alert = True
+        elif self.hydration > self.max_hydration * 0.50 and self._near_dehydration_alert:
+            self._near_dehydration_alert = False
+            self.log_life_event("Found water source just in time to escape fatal dehydration")
 
         # Track catastrophe survival
         if world.catastrophe_type:

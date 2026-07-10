@@ -116,6 +116,7 @@ def generate_biography(org: Organism, death_reason: str, death_age_years: float,
         'OLD_AGE': 'natural causes — a life fully lived',
         'PREDATION': 'predation — taken by a wolf',
         'ZAPPED': 'Director intervention',
+        'DROWNED': 'drowning — unable to escape deep waters',
     }
     cause_text = cause_map.get(death_reason, death_reason.lower().replace('_', ' '))
 
@@ -318,8 +319,9 @@ def run_simulation_loop():
         with sim_lock:
             ticks += 1
 
-            if organisms:
-                max_generation = max(o.generation for o in organisms if not o.is_dead)
+            living_gens = [o.generation for o in organisms if not o.is_dead]
+            if living_gens:
+                max_generation = max(living_gens)
 
             world.update(ticks, max_generation)
 
