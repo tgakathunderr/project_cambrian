@@ -154,7 +154,58 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStartSimulation }) => {
       <div className="absolute w-[500px] h-[500px] rounded-full bg-[#082a3e]/15 blur-[120px] -bottom-20 -right-20 pointer-events-none" />
 
       {/* Header Container */}
-      <header className="text-center mb-8 z-10">
+      <header className="text-center mb-8 z-10 flex flex-col items-center">
+        {/* Logo */}
+        <div className="w-16 h-16 mb-4 relative group">
+          <div className="absolute inset-0 bg-[#10b981]/20 rounded-full blur-md group-hover:bg-[#10b981]/30 transition-all duration-500" />
+          <svg className="w-full h-full relative z-10 drop-shadow-[0_4px_12px_rgba(16,185,129,0.25)] group-hover:scale-105 transition-transform duration-500" viewBox="0 0 100 100" fill="none">
+            <defs>
+              <linearGradient id="logoBgGrad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#000e07" />
+                <stop offset="100%" stop-color="#002111" />
+              </linearGradient>
+              <linearGradient id="logoBorderGrad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#dec2a0" stop-opacity="0.8" />
+                <stop offset="50%" stop-color="#10b981" stop-opacity="0.4" />
+                <stop offset="100%" stop-color="#34d399" stop-opacity="0.8" />
+              </linearGradient>
+              <linearGradient id="logoTriloGrad" x1="0" y1="20" x2="100" y2="80" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#dec2a0" />
+                <stop offset="35%" stop-color="#f0d3b0" />
+                <stop offset="70%" stop-color="#10b981" />
+                <stop offset="100%" stop-color="#34d399" />
+              </linearGradient>
+              <linearGradient id="logoSpineGrad" x1="50" y1="20" x2="50" y2="80" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#dec2a0" />
+                <stop offset="100%" stop-color="#10b981" />
+              </linearGradient>
+              <filter id="logoGlow" x="-20%" y="-20%" width="140%" height="140%" filterUnits="userSpaceOnUse">
+                <feGaussianBlur stdDeviation="1.5" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+
+            <circle cx="50" cy="50" r="46" fill="url(#logoBgGrad)" stroke="url(#logoBorderGrad)" stroke-width="2" />
+            
+            <circle cx="50" cy="50" r="41" stroke="#10b981" stroke-width="0.5" stroke-dasharray="3 6" opacity="0.3" />
+
+            <rect x="48.5" y="24" width="3" height="54" rx="1.5" fill="url(#logoSpineGrad)" opacity="0.9" />
+
+            <path d="M 23 35 C 23 18, 77 18, 77 35" stroke="url(#logoTriloGrad)" stroke-width="6.5" stroke-linecap="round" />
+
+            <path d="M 21 44 Q 50 30 79 44" stroke="url(#logoTriloGrad)" stroke-width="4.5" stroke-linecap="round" />
+            <path d="M 23 53 Q 50 39 77 53" stroke="url(#logoTriloGrad)" stroke-width="4.5" stroke-linecap="round" />
+            <path d="M 27 62 Q 50 49 73 62" stroke="url(#logoTriloGrad)" stroke-width="4.5" stroke-linecap="round" />
+            <path d="M 33 71 Q 50 59 67 71" stroke="url(#logoTriloGrad)" stroke-width="4.5" stroke-linecap="round" />
+
+            <path d="M 41 79 Q 50 70 59 79" stroke="url(#logoTriloGrad)" stroke-width="4.5" stroke-linecap="round" />
+
+            <circle cx="39" cy="27" r="1.75" fill="#ffffff" filter="url(#logoGlow)" />
+            <circle cx="39" cy="27" r="0.75" fill="#dec2a0" />
+            <circle cx="61" cy="27" r="1.75" fill="#ffffff" filter="url(#logoGlow)" />
+            <circle cx="61" cy="27" r="0.75" fill="#dec2a0" />
+          </svg>
+        </div>
         <h1 className="font-headline text-5xl font-extrabold uppercase tracking-[0.25em] text-white/95 leading-tight flex items-center justify-center gap-1.5">
           <span className="text-[#dec2a0] text-6xl">C</span>ambrian
         </h1>

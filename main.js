@@ -43,7 +43,7 @@ function createWindow() {
     height: 900,
     title: "Cambrian | Digital Terrarium",
     backgroundColor: "#00170f",
-    icon: path.join(__dirname, 'frontend/dist/favicon.svg'),
+    icon: path.join(__dirname, 'frontend/dist/favicon.png'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true
