@@ -81,6 +81,12 @@ class SettingsRequest(BaseModel):
 class CatastropheRequest(BaseModel):
     type: str  # 'DROUGHT', 'FAMINE', or 'NONE'
 
+class PaintTerrainRequest(BaseModel):
+    x: float
+    y: float
+    radius: float
+    type: str  # 'GRASS', 'SAND', 'WATER_SHALLOW', 'WATER_DEEP', 'ROCK'
+
 
 # ─── Discovery Log Utility ───────────────────────────────────────────
 def add_log(category: str, message: str, organism_id: Optional[str] = None):
@@ -207,9 +213,9 @@ def spawn_ancestor(x=None, y=None, name=None):
     return org
 
 
-# Seed Initial Organisms
-for _ in range(8):
-    spawn_ancestor()
+# Seed Initial Organisms: Set to 0 so users spawn them manually
+# for _ in range(8):
+#     spawn_ancestor()
 
 
 def handle_mating(org_list: List[Organism]):
@@ -569,6 +575,22 @@ def get_logs():
     return discovery_logs
 
 
+@app.get("/api/terrain")
+def get_terrain():
+    """Returns the 2D grid tilemap."""
+    with sim_lock:
+        return {"terrain": world.terrain, "cols": world.cols, "rows": world.rows, "tile_size": world.tile_size}
+
+
+@app.post("/api/terrain/paint")
+def paint_terrain(req: PaintTerrainRequest):
+    """Paints terrain tiles around coordinates."""
+    with sim_lock:
+        world.paint_terrain(req.x, req.y, req.radius, req.type)
+        add_log("SYSTEM", f"Director painted {req.type.lower()} terrain.")
+    return {"status": "SUCCESS"}
+
+
 # ─── WebSocket State Streamer ─────────────────────────────────────────
 
 @app.websocket("/api/ws/state")
@@ -683,7 +705,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     "obstacles": world.obstacles,
                     "organisms": orgs_data,
                     "predators": preds_data,
-                    "selected": selected_telemetry
+                    "selected": selected_telemetry,
+                    "terrain": world.terrain
                 }
 
             await websocket.send_text(json.dumps(state_payload))

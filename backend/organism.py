@@ -305,9 +305,20 @@ class Organism:
             self.mating_cooldown -= 1
         self.has_mating_intent = False
 
-        # 2. Physics update
-        self.x += self.vx
-        self.y += self.vy
+        # 2. Physics update with Terrain Friction
+        tile_type = world.get_tile_type_at(self.x, self.y)
+        speed_multiplier = 1.0
+        drowning_drain = 0.0
+
+        if tile_type == 'WATER_SHALLOW':
+            speed_multiplier = 0.6  # 40% speed reduction in shallow water
+        elif tile_type == 'WATER_DEEP':
+            speed_multiplier = 0.25 # 75% speed reduction in deep water
+            # Drowning penalty: if creature is small or low on energy, deep water drains energy fast
+            drowning_drain = 0.003 * self.size_ratio
+
+        self.x += self.vx * speed_multiplier
+        self.y += self.vy * speed_multiplier
         self.vx *= 0.90
         self.vy *= 0.90
 
@@ -349,7 +360,7 @@ class Organism:
         efficiency_mult = 1.5 if self.get_lifecycle_stage() == 2 else 1.0
 
         # Satiation rates: Starvation limit 10 days, Dehydration limit 3 days
-        self.energy_decay = 0.00009259 * self.dna.metabolism * self.size_ratio * efficiency_mult
+        self.energy_decay = 0.00009259 * self.dna.metabolism * self.size_ratio * efficiency_mult + drowning_drain
         self.hydration_decay = 0.0003086 * self.dna.metabolism * self.size_ratio * efficiency_mult
 
         self.energy -= self.energy_decay
@@ -358,7 +369,7 @@ class Organism:
         # Death checks
         if self.energy <= 0:
             self.is_dead = True
-            self.death_reason = 'STARVATION'
+            self.death_reason = 'DROWNED' if drowning_drain > 0 else 'STARVATION'
             return
         if self.hydration <= 0:
             self.is_dead = True

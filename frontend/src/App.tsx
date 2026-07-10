@@ -44,6 +44,7 @@ interface StatePayload {
   food: ResourceData[]; water: ResourceData[]; obstacles: ObstacleData[];
   organisms: OrganismData[]; predators: PredatorData[];
   selected: SelectedTelemetry | null;
+  terrain?: string[][];
 }
 
 // ─── Static lookup maps ────────────────────────────────────────────────
@@ -62,11 +63,15 @@ const PHASE_LABELS: Record<number, { label: string; color: string }> = {
   3: { label: 'Competition', color: 'text-[#ffb4ab]' },
 };
 
-const GOD_TOOLS: { type: string; icon: string; label: string; color: string }[] = [
-  { type: 'PREY',     icon: 'add_circle',  label: 'Organism', color: '#dec2a0' },
-  { type: 'FOOD',     icon: 'grass',       label: 'Food',     color: '#8da89b' },
-  { type: 'WATER',    icon: 'water_drop',  label: 'Water',    color: '#93c5fd' },
-  { type: 'OBSTACLE', icon: 'circle',      label: 'Obstacle', color: '#ffffff' },
+const GOD_TOOLS: { type: string; icon: string; label: string; color: string; category: 'SPAWN' | 'TERRAIN' }[] = [
+  { type: 'PREY',              icon: 'add_circle',  label: 'Organism', color: '#dec2a0', category: 'SPAWN' },
+  { type: 'WOLF',              icon: 'pets',        label: 'Wolf',     color: '#ffb4ab', category: 'SPAWN' },
+  { type: 'FOOD',              icon: 'park',        label: 'Tree',     color: '#8da89b', category: 'SPAWN' },
+  { type: 'PAINT_GRASS',       icon: 'forest',      label: 'Grass',    color: '#8da89b', category: 'TERRAIN' },
+  { type: 'PAINT_SAND',        icon: 'waves',       label: 'Sand',     color: '#dec2a0', category: 'TERRAIN' },
+  { type: 'PAINT_WATER_SHALLOW', icon: 'water',       label: 'Shallow',  color: '#93c5fd', category: 'TERRAIN' },
+  { type: 'PAINT_WATER_DEEP',  icon: 'sailing',     label: 'Deep Sea', color: '#60a5fa', category: 'TERRAIN' },
+  { type: 'PAINT_ROCK',        icon: 'terrain',     label: 'Rock',     color: '#ffffff', category: 'TERRAIN' },
 ];
 
 // ─── Main App ─────────────────────────────────────────────────────────
@@ -85,6 +90,7 @@ export const App: React.FC = () => {
   const [food, setFood] = useState<ResourceData[]>([]);
   const [water, setWater] = useState<ResourceData[]>([]);
   const [obstacles, setObstacles] = useState<ObstacleData[]>([]);
+  const [terrain, setTerrain] = useState<string[][]>([]);
   const [selectedTelemetry, setSelectedTelemetry] = useState<SelectedTelemetry | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -128,6 +134,7 @@ export const App: React.FC = () => {
         setFood(payload.food);
         setWater(payload.water);
         setObstacles(payload.obstacles);
+        setTerrain(payload.terrain || []);
         setSelectedTelemetry(payload.selected);
         if (!payload.selected) setSelectedId(null);
       };
@@ -194,6 +201,14 @@ export const App: React.FC = () => {
     }).catch(() => {});
   }, []);
 
+  const handlePaintTerrain = useCallback((x: number, y: number, type: string) => {
+    fetch('http://127.0.0.1:8000/api/terrain/paint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ x, y, radius: 45.0, type })
+    }).catch(() => {});
+  }, []);
+
   const handleNeedNameForSpawn = useCallback((x: number, y: number) => {
     setSpawnPending({ x, y });
   }, []);
@@ -220,10 +235,7 @@ export const App: React.FC = () => {
     }).catch(() => {});
   }, []);
 
-  // Toggle god tool (click same tool to deselect)
-  const handleGodTool = (type: string) => {
-    setActiveGodModeType(prev => prev === type ? null : type);
-  };
+
 
   const cortisol = selectedTelemetry?.cortisol || 0.0;
   const dopamine = selectedTelemetry?.dopamine || 0.0;
@@ -334,41 +346,78 @@ export const App: React.FC = () => {
                   activeGodModeType={activeGodModeType}
                   onSpawnElement={handleSpawnElement}
                   onNeedNameForSpawn={handleNeedNameForSpawn}
+                  terrain={terrain}
+                  onPaintTerrain={handlePaintTerrain}
                 />
 
-                {/* God Mode Toolbar (floating at top of canvas) */}
-                <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 glass-overlay rounded-2xl px-3 py-2 border border-white/8">
-                  <span className="text-[9px] font-body text-white/20 uppercase tracking-[0.15em] mr-1.5 pr-2 border-r border-white/8">
-                    God Mode
-                  </span>
-                  {GOD_TOOLS.map(tool => (
-                    <button
-                      key={tool.type}
-                      onClick={() => handleGodTool(tool.type)}
-                      title={`Place ${tool.label}`}
-                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[10px] font-headline font-semibold transition-all ${
-                        activeGodModeType === tool.type
-                          ? 'ring-1 ring-white/20'
-                          : 'hover:bg-white/6'
-                      }`}
-                      style={activeGodModeType === tool.type ? {
-                        background: tool.color + '18',
-                        color: tool.color,
-                        boxShadow: `0 0 8px ${tool.color}20`
-                      } : { color: 'rgba(255,255,255,0.3)' }}
-                    >
-                      <span className="material-symbols-outlined text-sm">{tool.icon}</span>
-                      {tool.label}
-                    </button>
-                  ))}
-                  {activeGodModeType && (
-                    <button
-                      onClick={() => setActiveGodModeType(null)}
-                      className="ml-1 pl-2 border-l border-white/8 text-white/25 hover:text-white/55 transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-sm">close</span>
-                    </button>
-                  )}
+                {/* Worldbox-style God Mode Toolbar (floating at top of canvas) */}
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 glass-overlay rounded-2xl p-3 border border-white/8 max-w-[90%]">
+                  {/* Category labels and controls */}
+                  <div className="flex items-center gap-3 w-full justify-between pb-1.5 border-b border-white/5">
+                    <span className="text-[9px] font-body text-white/25 uppercase tracking-[0.2em] font-bold">
+                      Director Sandbox
+                    </span>
+                    {activeGodModeType && (
+                      <button
+                        onClick={() => setActiveGodModeType(null)}
+                        className="text-[8px] font-headline text-[#ffb4ab] border border-[#ffb4ab]/20 hover:bg-[#ffb4ab]/10 px-2 py-0.5 rounded-lg transition-colors uppercase tracking-wider font-bold"
+                      >
+                        Deselect Tool
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Tools grid */}
+                  <div className="flex flex-wrap items-center gap-3">
+                    {/* Spawns category */}
+                    <div className="flex items-center gap-1">
+                      <span className="text-[8px] font-headline text-white/20 uppercase tracking-widest mr-1">Spawns:</span>
+                      {GOD_TOOLS.filter(t => t.category === 'SPAWN').map(tool => (
+                        <button
+                          key={tool.type}
+                          onClick={() => setActiveGodModeType(prev => prev === tool.type ? null : tool.type)}
+                          title={`Spawn ${tool.label}`}
+                          className={`flex items-center gap-1 px-2 py-1 rounded-xl text-[9px] font-headline font-semibold transition-all ${
+                            activeGodModeType === tool.type ? 'ring-1 ring-white/20' : 'hover:bg-white/5'
+                          }`}
+                          style={activeGodModeType === tool.type ? {
+                            background: tool.color + '15',
+                            color: tool.color,
+                            boxShadow: `0 0 8px ${tool.color}15`
+                          } : { color: 'rgba(255,255,255,0.3)' }}
+                        >
+                          <span className="material-symbols-outlined text-xs">{tool.icon}</span>
+                          {tool.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Divider */}
+                    <div className="h-4 w-px bg-white/10" />
+
+                    {/* Terrain category */}
+                    <div className="flex items-center gap-1">
+                      <span className="text-[8px] font-headline text-white/20 uppercase tracking-widest mr-1">Terrain:</span>
+                      {GOD_TOOLS.filter(t => t.category === 'TERRAIN').map(tool => (
+                        <button
+                          key={tool.type}
+                          onClick={() => setActiveGodModeType(prev => prev === tool.type ? null : tool.type)}
+                          title={`Paint ${tool.label}`}
+                          className={`flex items-center gap-1 px-2 py-1 rounded-xl text-[9px] font-headline font-semibold transition-all ${
+                            activeGodModeType === tool.type ? 'ring-1 ring-white/20' : 'hover:bg-white/5'
+                          }`}
+                          style={activeGodModeType === tool.type ? {
+                            background: tool.color + '15',
+                            color: tool.color,
+                            boxShadow: `0 0 8px ${tool.color}15`
+                          } : { color: 'rgba(255,255,255,0.3)' }}
+                        >
+                          <span className="material-symbols-outlined text-xs">{tool.icon}</span>
+                          {tool.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
 

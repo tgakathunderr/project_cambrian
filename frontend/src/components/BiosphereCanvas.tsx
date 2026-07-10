@@ -67,6 +67,8 @@ interface BiosphereCanvasProps {
   activeGodModeType: string | null;
   onSpawnElement: (x: number, y: number, type: string) => void;
   onNeedNameForSpawn?: (x: number, y: number) => void;
+  terrain?: string[][];
+  onPaintTerrain?: (x: number, y: number, type: string) => void;
 }
 
 // DRIVE color palette for canvas rendering
@@ -82,7 +84,7 @@ const DRIVE_COLORS: Record<number, string> = {
 export const BiosphereCanvas: React.FC<BiosphereCanvasProps> = ({
   organisms, predators, food, water, obstacles,
   selectedId, onSelectOrganism, activeGodModeType, onSpawnElement,
-  onNeedNameForSpawn
+  onNeedNameForSpawn, terrain, onPaintTerrain
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -107,6 +109,7 @@ export const BiosphereCanvas: React.FC<BiosphereCanvasProps> = ({
   const panRef = useRef({ x: panX, y: panY });
   const zoomRef = useRef(zoom);
   const dimsRef = useRef(dimensions);
+  const terrainRef = useRef(terrain);
 
   useEffect(() => { orgsRef.current = organisms; }, [organisms]);
   useEffect(() => { predsRef.current = predators; }, [predators]);
@@ -117,6 +120,7 @@ export const BiosphereCanvas: React.FC<BiosphereCanvasProps> = ({
   useEffect(() => { panRef.current = { x: panX, y: panY }; }, [panX, panY]);
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
   useEffect(() => { dimsRef.current = dimensions; }, [dimensions]);
+  useEffect(() => { terrainRef.current = terrain; }, [terrain]);
 
   // Trails & VFX
   const trailsRef = useRef<Record<string, { x: number; y: number }[]>>({});
@@ -171,13 +175,36 @@ export const BiosphereCanvas: React.FC<BiosphereCanvasProps> = ({
     const orgs = orgsRef.current;
     const preds = predsRef.current;
     const foods = foodRef.current;
-    const waters = waterRef.current;
-    const obs = obstaclesRef.current;
     const selId = selectedIdRef.current;
+    const terrain = terrainRef.current;
 
-    // Background
-    ctx.fillStyle = '#00170f';
-    ctx.fillRect(0, 0, width, height);
+    // 1. Draw Terrain Tile Grid
+    const tileColors: Record<string, string> = {
+      GRASS: '#0d2216',
+      SAND: '#7a6245',
+      WATER_SHALLOW: '#0c2635',
+      WATER_DEEP: '#04131c',
+      ROCK: '#1a1c1a'
+    };
+
+    if (terrain && terrain.length > 0) {
+      for (let col = 0; col < 20; col++) {
+        for (let row = 0; row < 16; row++) {
+          const type = terrain[col]?.[row] || 'GRASS';
+          ctx.fillStyle = tileColors[type] || tileColors.GRASS;
+          ctx.fillRect(col * 50, row * 50, 50, 50);
+
+          // Subtle grid outline
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.012)';
+          ctx.lineWidth = 0.5;
+          ctx.strokeRect(col * 50, row * 50, 50, 50);
+        }
+      }
+    } else {
+      // Fallback
+      ctx.fillStyle = '#00170f';
+      ctx.fillRect(0, 0, width, height);
+    }
 
     ctx.save();
     const baseScale = Math.min(width / 1000, height / 800);
@@ -185,61 +212,35 @@ export const BiosphereCanvas: React.FC<BiosphereCanvasProps> = ({
     ctx.scale(baseScale * z, baseScale * z);
     ctx.translate(-500, -400);
 
-    // 1. Grid
-    ctx.strokeStyle = 'rgba(141,168,155,0.025)';
-    ctx.lineWidth = 1;
-    for (let x = 0; x <= 1000; x += 50) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 800); ctx.stroke();
-    }
-    for (let y = 0; y <= 800; y += 50) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(1000, y); ctx.stroke();
-    }
-
     // 2. World boundary
-    ctx.strokeStyle = 'rgba(141,168,155,0.12)';
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(141, 168, 155, 0.15)';
+    ctx.lineWidth = 2.0;
     ctx.strokeRect(0, 0, 1000, 800);
 
-    // 3. Obstacles
-    obs.forEach(o => {
-      ctx.fillStyle = 'rgba(7,32,23,0.95)';
-      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.arc(o.x, o.y, o.radius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-    });
-
-    // 4. Water pools
-    waters.forEach(w => {
-      const grad = ctx.createRadialGradient(w.x, w.y, 0, w.x, w.y, w.radius);
-      grad.addColorStop(0, 'rgba(147,197,253,0.18)');
-      grad.addColorStop(0.6, 'rgba(192,198,222,0.06)');
-      grad.addColorStop(1, 'rgba(192,198,222,0)');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(w.x, w.y, w.radius, 0, Math.PI * 2);
-      ctx.fill();
-      // Animated ripple
-      const rippleR = w.radius * (0.7 + 0.3 * Math.sin(time * 0.04));
-      ctx.strokeStyle = 'rgba(192,198,222,0.15)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(w.x, w.y, rippleR, 0, Math.PI * 2);
-      ctx.stroke();
-    });
-
-    // 5. Food spores (breathing pulse)
+    // 3. Draw Trees (Food)
     foods.forEach(f => {
-      const pulse = 1 + 0.12 * Math.sin(time * 0.05 + f.x * 0.01);
-      const grad = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.radius * pulse);
-      grad.addColorStop(0, 'rgba(141,168,155,0.6)');
-      grad.addColorStop(0.5, 'rgba(141,168,155,0.2)');
-      grad.addColorStop(1, 'rgba(141,168,155,0)');
-      ctx.fillStyle = grad;
+      const pulse = 1.0 + 0.07 * Math.sin(time * 0.04 + f.x * 0.01);
+      const r = f.radius * pulse;
+
+      // Tree Trunk
+      ctx.fillStyle = '#4c321c';
+      ctx.fillRect(f.x - 2.5, f.y, 5, r * 1.1);
+
+      // Shaded Leaves
+      const leafGrad = ctx.createRadialGradient(f.x, f.y - r * 0.4, 1, f.x, f.y - r * 0.4, r * 1.1);
+      leafGrad.addColorStop(0, '#2f8749');
+      leafGrad.addColorStop(0.7, '#1e592e');
+      leafGrad.addColorStop(1, '#0e2b17');
+
+      ctx.fillStyle = leafGrad;
       ctx.beginPath();
-      ctx.arc(f.x, f.y, f.radius * pulse, 0, Math.PI * 2);
+      ctx.arc(f.x, f.y - r * 0.4, r * 1.1, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Highlights
+      ctx.fillStyle = '#45b869';
+      ctx.beginPath();
+      ctx.arc(f.x - r * 0.25, f.y - r * 0.65, r * 0.45, 0, Math.PI * 2);
       ctx.fill();
     });
 
@@ -440,6 +441,14 @@ export const BiosphereCanvas: React.FC<BiosphereCanvasProps> = ({
     const { simX, simY } = toSimCoords(e.clientX, e.clientY);
 
     if (activeGodModeType) {
+      if (activeGodModeType.startsWith('PAINT_')) {
+        if (onPaintTerrain) {
+          const type = activeGodModeType.substring(6);
+          onPaintTerrain(simX, simY, type);
+        }
+        return;
+      }
+
       // Spawn ripple VFX
       const rippleColorMap: Record<string, string> = {
         PREY: '#dec2a0', WOLF: '#ffb4ab', FOOD: '#8da89b', WATER: '#93c5fd', OBSTACLE: '#ffffff'
@@ -483,8 +492,15 @@ export const BiosphereCanvas: React.FC<BiosphereCanvasProps> = ({
     const dx = e.clientX - dragStart.x;
     const dy = e.clientY - dragStart.y;
     if (Math.abs(dx) > 3 || Math.abs(dy) > 3) setHasDragged(true);
-    setPanX(prev => prev + dx);
-    setPanY(prev => prev + dy);
+
+    if (activeGodModeType && activeGodModeType.startsWith('PAINT_') && onPaintTerrain) {
+      const { simX, simY } = toSimCoords(e.clientX, e.clientY);
+      const type = activeGodModeType.substring(6);
+      onPaintTerrain(simX, simY, type);
+    } else {
+      setPanX(prev => prev + dx);
+      setPanY(prev => prev + dy);
+    }
     setDragStart({ x: e.clientX, y: e.clientY });
   };
 
