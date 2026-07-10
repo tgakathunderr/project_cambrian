@@ -55,59 +55,43 @@ class World:
 
     def update(self, ticks, max_generation):
         """Progresses world state, seasons, and filters depleted resources."""
-        # 1. Determine Difficulty Phase from Generation
-        # Phase 1: Gen 1-2 (Nursery: high resources, no season variation, 0 predators)
-        # Phase 2: Gen 3-5 (Adaptation: medium resources, no predators)
-        # Phase 3: Gen 6+ (Survival: scarcity, active seasons, droughts/famines, active predators)
-        if max_generation <= 2:
-            phase = 1
-            food_rate, water_rate = 0.5, 0.5
-            food_cap, water_cap = 60, 30
-        elif max_generation <= 5:
-            phase = 2
-            food_rate, water_rate = 0.35, 0.35
-            food_cap, water_cap = 40, 20
-        else:
-            phase = 3
-            # Active seasons progression
-            season_ticks = ticks % (self.ticks_per_season * 4)
-            self.current_season_idx = (season_ticks // self.ticks_per_season) % 4
-            current_season = self.get_current_season()
-            food_rate, water_rate = self.seasons[current_season]
-            food_cap, water_cap = 30, 15
+        # Active seasons progression starting immediately from Gen 1
+        season_ticks = ticks % (self.ticks_per_season * 4)
+        self.current_season_idx = (season_ticks // self.ticks_per_season) % 4
+        current_season = self.get_current_season()
+        food_rate, water_rate = self.seasons[current_season]
+        
+        # Scarcity resource caps
+        food_cap, water_cap = 30, 15
 
-        # 2. Catastrophe Logic (Phase 3 only)
-        if phase == 3:
-            if self.catastrophe_type:
-                self.catastrophe_timer -= 1
-                if self.catastrophe_timer <= 0:
-                    self.catastrophe_type = None
-            else:
-                # 0.04% chance per tick to trigger catastrophe when idle
-                if random.random() < 0.0004:
-                    self.catastrophe_type = random.choice(['DROUGHT', 'FAMINE'])
-                    self.catastrophe_timer = random.randint(400, 800)
-            
-            # Apply Catastrophe modifier rates
-            if self.catastrophe_type == 'DROUGHT':
-                water_rate = 0.0
-                for w in self.water:
-                    w['amount'] -= 0.12
-                    w['radius'] = math.sqrt(max(1.0, w['amount'])) * 2.1
-            elif self.catastrophe_type == 'FAMINE':
-                food_rate = 0.0
-                for f in self.food:
-                    f['amount'] -= 0.12
-                    f['radius'] = math.sqrt(max(1.0, f['amount'])) * 1.6
+        # Catastrophe Logic
+        if self.catastrophe_type:
+            self.catastrophe_timer -= 1
+            if self.catastrophe_timer <= 0:
+                self.catastrophe_type = None
         else:
-            self.catastrophe_type = None
-            self.catastrophe_timer = 0
+            # 0.05% chance per tick to trigger catastrophe (Project Big Bang rate)
+            if random.random() < 0.0005:
+                self.catastrophe_type = random.choice(['DROUGHT', 'FAMINE'])
+                self.catastrophe_timer = random.randint(300, 600)
+        
+        # Apply Catastrophe modifier rates
+        if self.catastrophe_type == 'DROUGHT':
+            water_rate = 0.0
+            for w in self.water:
+                w['amount'] -= 0.12
+                w['radius'] = math.sqrt(max(1.0, w['amount'])) * 2.1
+        elif self.catastrophe_type == 'FAMINE':
+            food_rate = 0.0
+            for f in self.food:
+                f['amount'] -= 0.12
+                f['radius'] = math.sqrt(max(1.0, f['amount'])) * 1.6
             
         # Filter depleted resources
         self.food = [f for f in self.food if f['amount'] > 5.0]
         self.water = [w for w in self.water if w['amount'] > 5.0]
         
-        # 3. Replenish resource nodes based on caps
+        # Replenish resource nodes based on caps
         if random.random() < food_rate and len(self.food) < food_cap:
             self.spawn_food()
         if random.random() < water_rate and len(self.water) < water_cap:
