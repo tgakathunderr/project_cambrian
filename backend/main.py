@@ -386,17 +386,16 @@ def run_simulation_loop():
             organisms[:] = living_orgs + [o for o in organisms if o.is_dead]
 
             # Tick Predators
-            if PREDATOR_ENABLED:
-                living_preds = []
-                for p in predators:
-                    if not p.is_dead:
-                        p.tick(world, organisms)
-                        world.handle_obstacle_collision(p)
-                        if p.is_dead:
-                            add_log("DEATH", f"Predator {p.name} died of hunger.")
-                        else:
-                            living_preds.append(p)
-                predators[:] = living_preds
+            living_preds = []
+            for p in predators:
+                if not p.is_dead:
+                    p.tick(world, organisms)
+                    world.handle_obstacle_collision(p)
+                    if p.is_dead:
+                        add_log("DEATH", f"Predator {p.name} died of hunger.")
+                    else:
+                        living_preds.append(p)
+            predators[:] = living_preds
 
             # Handle Mating Crossovers
             living = [o for o in organisms if not o.is_dead]
