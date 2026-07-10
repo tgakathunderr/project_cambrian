@@ -13,7 +13,7 @@
     "electron-builder": "^24.13.3"
   },
   "build": {
-    "appId": "com.nucleusai.cambrian",
+    "appId": "com.unikailab.cambrian",
     "productName": "Cambrian",
     "win": {
       "target": "nsis"
