@@ -5,7 +5,7 @@
   <img src="https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square&logo=python" />
   <img src="https://img.shields.io/badge/react-18-61DAFB?style=flat-square&logo=react" />
   <img src="https://img.shields.io/badge/fastapi-0.110-009688?style=flat-square&logo=fastapi" />
-  <img src="https://img.shields.io/badge/license-MIT-yellow?style=flat-square" />
+  <img src="https://img.shields.io/badge/license-Proprietary-orange?style=flat-square" />
 </div>
 
 <br/>
@@ -163,7 +163,7 @@ PREDATOR_ENABLED = False  # Set True to enable wolf predators at Gen 6+
 
 ## License
 
-MIT — see [LICENSE](LICENSE)
+Proprietary Source-Available — see [LICENSE](LICENSE)
 
 ---
 
