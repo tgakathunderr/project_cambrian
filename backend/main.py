@@ -220,9 +220,9 @@ def spawn_ancestor(x=None, y=None, name=None, sex=None, age_years=None):
     return org
 
 
-# Seed Initial Organisms: Set to 0 so users spawn them manually
-# for _ in range(8):
-#     spawn_ancestor()
+# Seed Initial Organisms: spawn 8 ancestors on first launch
+for _ in range(8):
+    spawn_ancestor()
 
 
 def handle_mating(org_list: List[Organism]):
@@ -604,7 +604,14 @@ def paint_terrain(req: PaintTerrainRequest):
 import glob
 import pickle
 
-SAVES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "saves")
+# Use a persistent user-data directory so saves work in both dev and packaged mode.
+# On Windows: C:\Users\<user>\AppData\Roaming\Cambrian\saves
+# On macOS/Linux: ~/.cambrian/saves
+if os.name == 'nt':
+    _BASE_DATA = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), 'Cambrian')
+else:
+    _BASE_DATA = os.path.join(os.path.expanduser('~'), '.cambrian')
+SAVES_DIR = os.path.join(_BASE_DATA, 'saves')
 os.makedirs(SAVES_DIR, exist_ok=True)
 
 class SaveRequest(BaseModel):
@@ -754,6 +761,10 @@ def new_simulation(req: SaveRequest):
         active_specimen_id = None
         _cat_scorecard = None
         world_name = req.name.strip() if req.name else "My Terrarium"
+        
+        # Seed 8 ancestor organisms so the world starts populated
+        for _ in range(8):
+            spawn_ancestor()
         
         add_log("SYSTEM", f"A new primeval terrarium '{world_name}' has been initialized by the Director.")
     return {"status": "SUCCESS"}
