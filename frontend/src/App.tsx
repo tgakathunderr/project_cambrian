@@ -102,6 +102,7 @@ export const App: React.FC = () => {
 
   // God Mode
   const [activeGodModeType, setActiveGodModeType] = useState<string | null>(null);
+  const [showSandbox, setShowSandbox] = useState(true);
 
   // Discovery Log
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -351,74 +352,93 @@ export const App: React.FC = () => {
                 />
 
                 {/* Worldbox-style God Mode Toolbar (floating at top of canvas) */}
-                <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 glass-overlay rounded-2xl p-3 border border-white/8 max-w-[90%]">
-                  {/* Category labels and controls */}
-                  <div className="flex items-center gap-3 w-full justify-between pb-1.5 border-b border-white/5">
-                    <span className="text-[9px] font-body text-white/25 uppercase tracking-[0.2em] font-bold">
-                      Director Sandbox
-                    </span>
-                    {activeGodModeType && (
-                      <button
-                        onClick={() => setActiveGodModeType(null)}
-                        className="text-[8px] font-headline text-[#ffb4ab] border border-[#ffb4ab]/20 hover:bg-[#ffb4ab]/10 px-2 py-0.5 rounded-lg transition-colors uppercase tracking-wider font-bold"
-                      >
-                        Deselect Tool
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Tools grid */}
-                  <div className="flex flex-wrap items-center gap-3">
-                    {/* Spawns category */}
-                    <div className="flex items-center gap-1">
-                      <span className="text-[8px] font-headline text-white/20 uppercase tracking-widest mr-1">Spawns:</span>
-                      {GOD_TOOLS.filter(t => t.category === 'SPAWN').map(tool => (
+                {showSandbox ? (
+                  <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 glass-overlay rounded-2xl p-3 border border-white/8 max-w-[90%]">
+                    {/* Category labels and controls */}
+                    <div className="flex items-center gap-3 w-full justify-between pb-1.5 border-b border-white/5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-body text-white/25 uppercase tracking-[0.2em] font-bold">
+                          Director Sandbox
+                        </span>
                         <button
-                          key={tool.type}
-                          onClick={() => setActiveGodModeType(prev => prev === tool.type ? null : tool.type)}
-                          title={`Spawn ${tool.label}`}
-                          className={`flex items-center gap-1 px-2 py-1 rounded-xl text-[9px] font-headline font-semibold transition-all ${
-                            activeGodModeType === tool.type ? 'ring-1 ring-white/20' : 'hover:bg-white/5'
-                          }`}
-                          style={activeGodModeType === tool.type ? {
-                            background: tool.color + '15',
-                            color: tool.color,
-                            boxShadow: `0 0 8px ${tool.color}15`
-                          } : { color: 'rgba(255,255,255,0.3)' }}
+                          onClick={() => { setShowSandbox(false); setActiveGodModeType(null); }}
+                          className="text-white/20 hover:text-white/60 p-0.5 rounded transition-colors flex items-center justify-center"
+                          title="Hide Sandbox Panel"
                         >
-                          <span className="material-symbols-outlined text-xs">{tool.icon}</span>
-                          {tool.label}
+                          <span className="material-symbols-outlined text-[10px]">visibility_off</span>
                         </button>
-                      ))}
+                      </div>
+                      {activeGodModeType && (
+                        <button
+                          onClick={() => setActiveGodModeType(null)}
+                          className="text-[8px] font-headline text-[#ffb4ab] border border-[#ffb4ab]/20 hover:bg-[#ffb4ab]/10 px-2 py-0.5 rounded-lg transition-colors uppercase tracking-wider font-bold"
+                        >
+                          Deselect Tool
+                        </button>
+                      )}
                     </div>
 
-                    {/* Divider */}
-                    <div className="h-4 w-px bg-white/10" />
+                    {/* Tools grid */}
+                    <div className="flex flex-wrap items-center gap-3">
+                      {/* Spawns category */}
+                      <div className="flex items-center gap-1">
+                        <span className="text-[8px] font-headline text-white/20 uppercase tracking-widest mr-1">Spawns:</span>
+                        {GOD_TOOLS.filter(t => t.category === 'SPAWN').map(tool => (
+                          <button
+                            key={tool.type}
+                            onClick={() => setActiveGodModeType(prev => prev === tool.type ? null : tool.type)}
+                            title={`Spawn ${tool.label}`}
+                            className={`flex items-center gap-1 px-2 py-1 rounded-xl text-[9px] font-headline font-semibold transition-all ${
+                              activeGodModeType === tool.type ? 'ring-1 ring-white/20' : 'hover:bg-white/5'
+                            }`}
+                            style={activeGodModeType === tool.type ? {
+                              background: tool.color + '15',
+                              color: tool.color,
+                              boxShadow: `0 0 8px ${tool.color}15`
+                            } : { color: 'rgba(255,255,255,0.3)' }}
+                          >
+                            <span className="material-symbols-outlined text-xs">{tool.icon}</span>
+                            {tool.label}
+                          </button>
+                        ))}
+                      </div>
 
-                    {/* Terrain category */}
-                    <div className="flex items-center gap-1">
-                      <span className="text-[8px] font-headline text-white/20 uppercase tracking-widest mr-1">Terrain:</span>
-                      {GOD_TOOLS.filter(t => t.category === 'TERRAIN').map(tool => (
-                        <button
-                          key={tool.type}
-                          onClick={() => setActiveGodModeType(prev => prev === tool.type ? null : tool.type)}
-                          title={`Paint ${tool.label}`}
-                          className={`flex items-center gap-1 px-2 py-1 rounded-xl text-[9px] font-headline font-semibold transition-all ${
-                            activeGodModeType === tool.type ? 'ring-1 ring-white/20' : 'hover:bg-white/5'
-                          }`}
-                          style={activeGodModeType === tool.type ? {
-                            background: tool.color + '15',
-                            color: tool.color,
-                            boxShadow: `0 0 8px ${tool.color}15`
-                          } : { color: 'rgba(255,255,255,0.3)' }}
-                        >
-                          <span className="material-symbols-outlined text-xs">{tool.icon}</span>
-                          {tool.label}
-                        </button>
-                      ))}
+                      {/* Divider */}
+                      <div className="h-4 w-px bg-white/10" />
+
+                      {/* Terrain category */}
+                      <div className="flex items-center gap-1">
+                        <span className="text-[8px] font-headline text-white/20 uppercase tracking-widest mr-1">Terrain:</span>
+                        {GOD_TOOLS.filter(t => t.category === 'TERRAIN').map(tool => (
+                          <button
+                            key={tool.type}
+                            onClick={() => setActiveGodModeType(prev => prev === tool.type ? null : tool.type)}
+                            title={`Paint ${tool.label}`}
+                            className={`flex items-center gap-1 px-2 py-1 rounded-xl text-[9px] font-headline font-semibold transition-all ${
+                              activeGodModeType === tool.type ? 'ring-1 ring-white/20' : 'hover:bg-white/5'
+                            }`}
+                            style={activeGodModeType === tool.type ? {
+                              background: tool.color + '15',
+                              color: tool.color,
+                              boxShadow: `0 0 8px ${tool.color}15`
+                            } : { color: 'rgba(255,255,255,0.3)' }}
+                          >
+                            <span className="material-symbols-outlined text-xs">{tool.icon}</span>
+                            {tool.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <button
+                    onClick={() => setShowSandbox(true)}
+                    className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-3.5 py-2 rounded-2xl glass-overlay border border-white/8 hover:border-white/15 text-[#dec2a0]/85 hover:text-[#dec2a0] transition-all text-[9px] font-headline font-bold uppercase tracking-wider shadow-[0_6px_16px_rgba(0,0,0,0.35)]"
+                  >
+                    <span className="material-symbols-outlined text-xs">construction</span>
+                    Show Director Sandbox
+                  </button>
+                )}
               </div>
 
               {/* Discovery Log */}
