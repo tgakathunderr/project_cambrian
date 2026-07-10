@@ -193,11 +193,11 @@ export const App: React.FC = () => {
     setSelectedId(null);
   }, [zapPending]);
 
-  const handleSpawnElement = useCallback((x: number, y: number, type: string, name?: string) => {
+  const handleSpawnElement = useCallback((x: number, y: number, type: string, name?: string, sex?: string, ageYears?: number) => {
     fetch('http://127.0.0.1:8000/api/spawn', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ x, y, type, name: name || null })
+      body: JSON.stringify({ x, y, type, name: name || null, sex: sex || null, age_years: ageYears || null })
     }).catch(() => {});
   }, []);
 
@@ -213,9 +213,9 @@ export const App: React.FC = () => {
     setSpawnPending({ x, y });
   }, []);
 
-  const handleSpawnNameConfirm = useCallback((name: string) => {
+  const handleSpawnNameConfirm = useCallback((name: string, sex: 'MALE' | 'FEMALE', ageYears: number) => {
     if (!spawnPending) return;
-    handleSpawnElement(spawnPending.x, spawnPending.y, 'PREY', name);
+    handleSpawnElement(spawnPending.x, spawnPending.y, 'PREY', name, sex, ageYears);
     setSpawnPending(null);
   }, [spawnPending, handleSpawnElement]);
 

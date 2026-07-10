@@ -178,7 +178,17 @@ export const BiosphereCanvas: React.FC<BiosphereCanvasProps> = ({
     const selId = selectedIdRef.current;
     const terrain = terrainRef.current;
 
-    // 1. Draw Terrain Tile Grid
+    // Clear whole canvas screen space first to prevent trails/smearing
+    ctx.fillStyle = '#000c06';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.save();
+    const baseScale = Math.min(width / 1000, height / 800);
+    ctx.translate(width / 2 + pX, height / 2 + pY);
+    ctx.scale(baseScale * z, baseScale * z);
+    ctx.translate(-500, -400);
+
+    // 1. Draw Terrain Tile Grid inside transformed viewport coordinates
     const tileColors: Record<string, string> = {
       GRASS: '#0d2216',
       SAND: '#7a6245',
@@ -200,17 +210,7 @@ export const BiosphereCanvas: React.FC<BiosphereCanvasProps> = ({
           ctx.strokeRect(col * 50, row * 50, 50, 50);
         }
       }
-    } else {
-      // Fallback
-      ctx.fillStyle = '#00170f';
-      ctx.fillRect(0, 0, width, height);
     }
-
-    ctx.save();
-    const baseScale = Math.min(width / 1000, height / 800);
-    ctx.translate(width / 2 + pX, height / 2 + pY);
-    ctx.scale(baseScale * z, baseScale * z);
-    ctx.translate(-500, -400);
 
     // 2. World boundary
     ctx.strokeStyle = 'rgba(141, 168, 155, 0.15)';

@@ -68,6 +68,8 @@ class SpawnRequest(BaseModel):
     y: float
     type: str  # 'PREY', 'WOLF', 'FOOD', 'WATER', 'OBSTACLE'
     name: Optional[str] = None
+    sex: Optional[str] = None
+    age_years: Optional[float] = None
 
 class RenameRequest(BaseModel):
     id: str
@@ -185,7 +187,7 @@ SEASONS_LABELS = {
 }
 
 # ─── Spawn Helpers ────────────────────────────────────────────────────
-def spawn_ancestor(x=None, y=None, name=None):
+def spawn_ancestor(x=None, y=None, name=None, sex=None, age_years=None):
     """Spawns a generation 1 founder organism."""
     if x is None:
         x = random.uniform(50, world.width - 50)
@@ -193,9 +195,12 @@ def spawn_ancestor(x=None, y=None, name=None):
         y = random.uniform(50, world.height - 50)
 
     dna = DNA.create_random()
-    sex = random.choice(['MALE', 'FEMALE'])
+    if sex is None:
+        sex = random.choice(['MALE', 'FEMALE'])
     season = world.get_current_season()
     org = Organism(x, y, dna, sex=sex, generation=1, name=name, birth_season=season)
+    if age_years is not None:
+        org.age = int(age_years * 1296000.0)
     organisms.append(org)
 
     lineage_tracker.register_birth(
@@ -432,42 +437,29 @@ def spawn_element(req: SpawnRequest):
     """Creates an organism, predator, or world element from God Mode."""
     with sim_lock:
         if req.type == 'PREY':
-            season = world.get_current_season()
-            org = Organism(
-                x=req.x, y=req.y,
-                dna=DNA.create_random(),
-                sex=random.choice(['MALE', 'FEMALE']),
-                generation=1,
-                name=req.name or generate_organic_name(),
-                birth_season=season
-            )
-            organisms.append(org)
-            lineage_tracker.register_birth(
-                organism_id=org.id, name=org.name,
-                parent1_id=None, parent1_name=None,
-                parent2_id=None, parent2_name=None,
-                generation=1, dna=org.dna, mutations=[]
-            )
-            add_log("SYSTEM", f"{org.name} was introduced to the world by the Director.", organism_id=org.id)
+            org = spawn_ancestor(x=req.x, y=req.y, name=req.name, sex=req.sex, age_years=req.age_years)
             return {"status": "SUCCESS", "id": org.id, "name": org.name}
 
-        elif req.type == 'WOLF' and PREDATOR_ENABLED:
+        elif req.type == 'WOLF':
             pred = Predator(req.x, req.y)
             predators.append(pred)
             add_log("SYSTEM", f"Predator {pred.name} was placed by the Director.")
             return {"status": "SUCCESS", "id": pred.id}
 
         elif req.type == 'FOOD':
-            world.food.append({'x': req.x, 'y': req.y, 'amount': 60.0, 'radius': 12.0})
-            return {"status": "SUCCESS"}
+            if world.get_tile_type_at(req.x, req.y) in ['GRASS', 'SAND']:
+                world.food.append({'x': req.x, 'y': req.y, 'amount': 60.0, 'radius': 12.0})
+                return {"status": "SUCCESS"}
+            return {"status": "ERROR", "message": "Trees can only grow on Grass or Sand!"}
 
         elif req.type == 'WATER':
-            world.water.append({'x': req.x, 'y': req.y, 'amount': 120.0, 'radius': 14.0})
+            # Water tiles paint instead
+            world.paint_terrain(req.x, req.y, 45.0, 'WATER_SHALLOW')
             return {"status": "SUCCESS"}
 
         elif req.type == 'OBSTACLE':
-            radius = random.uniform(12.0, 22.0)
-            world.obstacles.append({'x': req.x, 'y': req.y, 'radius': radius})
+            # Rock tiles paint instead
+            world.paint_terrain(req.x, req.y, 45.0, 'ROCK')
             return {"status": "SUCCESS"}
 
     return {"status": "ERROR", "message": "Unknown type"}
