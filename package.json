@@ -1,0 +1,41 @@
+{
+  "name": "project_cambrian",
+  "version": "1.0.0",
+  "description": "Premium desktop digital terrarium and biological simulation",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.nucleusai.cambrian",
+    "productName": "Cambrian",
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "runAfterFinish": true
+    },
+    "extraResources": [
+      {
+        "from": "backend",
+        "to": "extraResources/backend",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "files": [
+      "main.js",
+      "frontend/dist/**/*"
+    ]
+  }
+}
