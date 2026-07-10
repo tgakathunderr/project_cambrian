@@ -10,13 +10,13 @@
 
 <br/>
 
-> **A living digital terrarium.** Watch real AI organisms evolve, compete, mate, and die — governed by a genuine neural architecture (BIB) and true genetic inheritance.
+> **A living digital terrarium.** Watch virtual organisms evolve, compete, mate, and die — governed by a genuine neural architecture (BIB) and true genetic inheritance.
 
 ---
 
 ## What Is This?
 
-Project Cambrian is a **real-time evolutionary biology simulator** built as a desktop application. It is not a toy — every organism runs a full neural brain (the [BIB](../bib) framework), metabolises energy, seeks mates, fears predators, and dies of genuine causes. Their children inherit and mutate genetic traits across generations.
+Project Cambrian is a **real-time evolutionary biology simulator** built as a desktop application. It is not a toy — every organism runs a full neural brain (using the [BIB framework](https://github.com/tgakathunderr/bib)), metabolises energy, seeks mates, fears predators, and dies of genuine causes. Their children inherit and mutate genetic traits across generations.
 
 You are the **Director** — you can name creatures, spawn resources, trigger environmental catastrophes, and read post-mortem biographies of every specimen that ever lived.
 
@@ -26,7 +26,7 @@ You are the **Director** — you can name creatures, spawn resources, trigger en
 
 | Feature | Description |
 |---|---|
-| 🧠 **Real Neural Brains** | Every organism runs BIB — a biologically-plausible spiking-inspired architecture with dopamine, serotonin, cortisol, and acetylcholine |
+| 🧠 **Real Neural Brains** | Every organism runs [BIB](https://github.com/tgakathunderr/bib) — a biologically-plausible spiking-inspired architecture with dopamine, serotonin, cortisol, and acetylcholine |
 | 🧬 **Genetic Inheritance** | DNA crossover + mutation across unlimited generations. Traits: speed, size, vision, metabolism |
 | 🌍 **Living World** | Food spores, water pools, seasons, environmental catastrophes (Drought, Famine) |
 | 📜 **Biography System** | Every death generates a life story with real events — first meal, offspring names, survived catastrophes, cause of death |
@@ -71,12 +71,13 @@ project_cambrian/
 
 - Python 3.10+
 - Node.js 18+
-- The [BIB](../bib) neural framework installed as an editable package
+- The [BIB library](https://github.com/tgakathunderr/bib) installed
 
 ### 1 — Install the BIB brain
 
 ```bash
-pip install -e path/to/bib
+git clone https://github.com/tgakathunderr/bib
+pip install -e ./bib
 ```
 
 ### 2 — Install backend dependencies
