@@ -599,6 +599,157 @@ def paint_terrain(req: PaintTerrainRequest):
     return {"status": "SUCCESS"}
 
 
+# ─── Save & Load Management ──────────────────────────────────────────
+import glob
+import pickle
+
+SAVES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "saves")
+os.makedirs(SAVES_DIR, exist_ok=True)
+
+class SaveRequest(BaseModel):
+    name: str
+
+class LoadRequest(BaseModel):
+    id: str
+
+@app.get("/api/saves")
+def list_saves():
+    """Lists saved simulations with metadata."""
+    files = glob.glob(os.path.join(SAVES_DIR, "*.pkl"))
+    saves = []
+    for filepath in files:
+        filename = os.path.basename(filepath)
+        save_id = filename[:-4]  # strip .pkl
+        stats = os.stat(filepath)
+        modified_time = stats.st_mtime
+        
+        try:
+            with open(filepath, 'rb') as f:
+                saved_state = pickle.load(f)
+                living_count = len([o for o in saved_state.get("organisms", []) if not o.is_dead])
+                pred_count = len([p for p in saved_state.get("predators", []) if not p.is_dead])
+                ticks_count = saved_state.get("ticks", 0)
+                years_count = round(ticks_count / 1296000.0, 1)
+        except Exception:
+            living_count = 0
+            pred_count = 0
+            years_count = 0.0
+
+        saves.append({
+            "id": save_id,
+            "name": save_id.replace("_", " "),
+            "timestamp": modified_time,
+            "population": living_count,
+            "predators": pred_count,
+            "years": years_count
+        })
+    saves.sort(key=lambda x: x["timestamp"], reverse=True)
+    return saves
+
+@app.post("/api/saves/save")
+def save_simulation(req: SaveRequest):
+    """Saves the current simulation state under a name."""
+    global ticks, max_generation, simulation_speed, simulation_running, mutation_rate
+    global world, organisms, predators, lineage_tracker, biographies, discovery_logs
+    
+    safe_name = "".join([c if c.isalnum() or c in [' ', '_', '-'] else '' for c in req.name]).strip()
+    safe_name = safe_name.replace(" ", "_")
+    if not safe_name:
+        return {"status": "ERROR", "message": "Invalid save name"}
+        
+    filepath = os.path.join(SAVES_DIR, f"{safe_name}.pkl")
+    
+    with sim_lock:
+        state = {
+            "ticks": ticks,
+            "max_generation": max_generation,
+            "simulation_speed": simulation_speed,
+            "simulation_running": simulation_running,
+            "mutation_rate": mutation_rate,
+            "world": world,
+            "organisms": organisms,
+            "predators": predators,
+            "lineage_tracker": lineage_tracker,
+            "biographies": biographies,
+            "discovery_logs": discovery_logs
+        }
+        try:
+            with open(filepath, 'wb') as f:
+                pickle.dump(state, f)
+            add_log("SYSTEM", f"Simulation successfully saved as '{req.name}'.")
+            return {"status": "SUCCESS", "id": safe_name}
+        except Exception as e:
+            return {"status": "ERROR", "message": str(e)}
+
+@app.post("/api/saves/load")
+def load_simulation(req: LoadRequest):
+    """Loads a saved simulation state."""
+    global ticks, max_generation, simulation_speed, simulation_running, mutation_rate
+    global world, organisms, predators, lineage_tracker, biographies, discovery_logs
+    global active_specimen_id
+    
+    filepath = os.path.join(SAVES_DIR, f"{req.id}.pkl")
+    if not os.path.exists(filepath):
+        return {"status": "ERROR", "message": "Save file not found"}
+        
+    with sim_lock:
+        try:
+            with open(filepath, 'rb') as f:
+                state = pickle.load(f)
+                
+            ticks = state.get("ticks", 0)
+            max_generation = state.get("max_generation", 1)
+            simulation_speed = state.get("simulation_speed", 1.0)
+            simulation_running = state.get("simulation_running", True)
+            mutation_rate = state.get("mutation_rate", 0.15)
+            world = state.get("world")
+            organisms = state.get("organisms", [])
+            predators = state.get("predators", [])
+            lineage_tracker = state.get("lineage_tracker", LineageTracker())
+            biographies = state.get("biographies", {})
+            discovery_logs = state.get("discovery_logs", [])
+            active_specimen_id = None
+            
+            add_log("SYSTEM", f"Simulation loaded successfully from save state '{req.id.replace('_', ' ')}'.")
+            return {"status": "SUCCESS"}
+        except Exception as e:
+            return {"status": "ERROR", "message": f"Pickle load error: {str(e)}"}
+
+@app.post("/api/saves/delete")
+def delete_save(req: LoadRequest):
+    """Deletes a saved simulation."""
+    filepath = os.path.join(SAVES_DIR, f"{req.id}.pkl")
+    if os.path.exists(filepath):
+        os.remove(filepath)
+        return {"status": "SUCCESS"}
+    return {"status": "ERROR", "message": "Save file not found"}
+
+@app.post("/api/saves/new")
+def new_simulation():
+    """Resets the entire simulation to a default fresh worldbox state."""
+    global ticks, max_generation, simulation_speed, simulation_running, mutation_rate
+    global world, organisms, predators, lineage_tracker, biographies, discovery_logs
+    global active_specimen_id, _cat_scorecard
+    
+    with sim_lock:
+        ticks = 0
+        max_generation = 1
+        simulation_speed = 1.0
+        simulation_running = True
+        mutation_rate = 0.15
+        world = World(width=1000, height=800)
+        organisms = []
+        predators = []
+        lineage_tracker = LineageTracker()
+        biographies = {}
+        discovery_logs = []
+        active_specimen_id = None
+        _cat_scorecard = None
+        
+        add_log("SYSTEM", "A new primeval terrarium has been initialized by the Director.")
+    return {"status": "SUCCESS"}
+
+
 # ─── WebSocket State Streamer ─────────────────────────────────────────
 
 @app.websocket("/api/ws/state")

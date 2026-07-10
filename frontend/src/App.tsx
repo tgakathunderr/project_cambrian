@@ -7,6 +7,7 @@ import { DiscoveryLog } from './components/DiscoveryLog';
 import { BiographyCard } from './components/BiographyCard';
 import { SpawnNameModal } from './components/SpawnNameModal';
 import { ZapConfirmModal } from './components/ZapConfirmModal';
+import { MainMenu } from './components/MainMenu';
 
 // ─── Type Definitions ─────────────────────────────────────────────────
 interface OrganismData {
@@ -103,6 +104,7 @@ export const App: React.FC = () => {
   // God Mode
   const [activeGodModeType, setActiveGodModeType] = useState<string | null>(null);
   const [showSandbox, setShowSandbox] = useState(true);
+  const [view, setView] = useState<'MENU' | 'SIMULATION'>('MENU');
 
   // Discovery Log
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -236,12 +238,42 @@ export const App: React.FC = () => {
     }).catch(() => {});
   }, []);
 
+  const handleExitToMenu = useCallback(() => {
+    const saveName = prompt("Enter a name to save this simulation state (leave blank to exit without saving):");
+    if (saveName === null) return; // cancelled
+    
+    if (saveName.trim()) {
+      fetch('http://127.0.0.1:8000/api/saves/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: saveName.trim() })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'SUCCESS') {
+            setView('MENU');
+            setSelectedId(null);
+          } else {
+            alert(`Failed to save: ${data.message}`);
+          }
+        })
+        .catch(() => alert('Failed to connect to backend server.'));
+    } else {
+      setView('MENU');
+      setSelectedId(null);
+    }
+  }, []);
+
 
 
   const cortisol = selectedTelemetry?.cortisol || 0.0;
   const dopamine = selectedTelemetry?.dopamine || 0.0;
   const phaseInfo = PHASE_LABELS[phase] || PHASE_LABELS[1];
   const livingCount = organisms.length;
+
+  if (view === 'MENU') {
+    return <MainMenu onStartSimulation={() => setView('SIMULATION')} />;
+  }
 
   return (
     <div className="relative w-screen h-screen overflow-hidden flex flex-col" style={{ background: '#00170f' }}>
@@ -307,6 +339,15 @@ export const App: React.FC = () => {
               </button>
             ))}
           </nav>
+
+          {/* Exit Button */}
+          <button
+            onClick={handleExitToMenu}
+            title="Save and Exit to Main Menu"
+            className="flex items-center justify-center w-8 h-8 rounded-xl bg-white/4 border border-[#ffb4ab]/12 hover:bg-[#ffb4ab]/10 hover:border-[#ffb4ab]/30 text-[#ffb4ab]/75 hover:text-[#ffb4ab] transition-all"
+          >
+            <span className="material-symbols-outlined text-sm">logout</span>
+          </button>
         </div>
       </header>
 
