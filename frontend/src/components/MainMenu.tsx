@@ -60,7 +60,11 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStartSimulation }) => {
     setInitializing(true);
     try {
       // 1. Reset simulation
-      const res = await fetch('http://127.0.0.1:8000/api/saves/new', { method: 'POST' });
+      const res = await fetch('http://127.0.0.1:8000/api/saves/new', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: worldName.trim() })
+      });
       const data = await res.json();
       if (data.status !== 'SUCCESS') throw new Error('Reset failed');
 

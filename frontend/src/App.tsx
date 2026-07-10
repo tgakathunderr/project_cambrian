@@ -46,6 +46,7 @@ interface StatePayload {
   organisms: OrganismData[]; predators: PredatorData[];
   selected: SelectedTelemetry | null;
   terrain?: string[][];
+  world_name?: string;
 }
 
 // ─── Static lookup maps ────────────────────────────────────────────────
@@ -105,6 +106,7 @@ export const App: React.FC = () => {
   const [activeGodModeType, setActiveGodModeType] = useState<string | null>(null);
   const [showSandbox, setShowSandbox] = useState(true);
   const [view, setView] = useState<'MENU' | 'SIMULATION'>('MENU');
+  const [worldName, setWorldName] = useState('My Terrarium');
 
   // Discovery Log
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -138,6 +140,7 @@ export const App: React.FC = () => {
         setWater(payload.water);
         setObstacles(payload.obstacles);
         setTerrain(payload.terrain || []);
+        setWorldName(payload.world_name || 'My Terrarium');
         setSelectedTelemetry(payload.selected);
         if (!payload.selected) setSelectedId(null);
       };
@@ -239,29 +242,25 @@ export const App: React.FC = () => {
   }, []);
 
   const handleExitToMenu = useCallback(() => {
-    const saveName = prompt("Enter a name to save this simulation state (leave blank to exit without saving):");
-    if (saveName === null) return; // cancelled
-    
-    if (saveName.trim()) {
-      fetch('http://127.0.0.1:8000/api/saves/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: saveName.trim() })
+    // Autosave using empty name (instructs backend to use its own world_name)
+    fetch('http://127.0.0.1:8000/api/saves/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: "" })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'SUCCESS') {
+          setView('MENU');
+          setSelectedId(null);
+        } else {
+          alert(`Autosave failed: ${data.message}`);
+        }
       })
-        .then(res => res.json())
-        .then(data => {
-          if (data.status === 'SUCCESS') {
-            setView('MENU');
-            setSelectedId(null);
-          } else {
-            alert(`Failed to save: ${data.message}`);
-          }
-        })
-        .catch(() => alert('Failed to connect to backend server.'));
-    } else {
-      setView('MENU');
-      setSelectedId(null);
-    }
+      .catch(() => {
+        setView('MENU');
+        setSelectedId(null);
+      });
   }, []);
 
 
@@ -285,10 +284,10 @@ export const App: React.FC = () => {
         {/* Left — wordmark */}
         <div className="flex items-center gap-3">
           <h1 className="font-headline text-[18px] font-bold tracking-tight" style={{ color: '#dec2a0' }}>
-            Cambrian
+            {worldName}
           </h1>
           <span className="hidden sm:block text-[10px] font-body text-white/20 uppercase tracking-[0.2em] mt-0.5">
-            Biosphere Simulator
+            Biosphere
           </span>
         </div>
 

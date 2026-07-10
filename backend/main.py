@@ -38,6 +38,7 @@ max_generation = 1
 simulation_speed = 1.0
 simulation_running = True
 mutation_rate = 0.15
+world_name = "My Terrarium"
 
 world = World(width=1000, height=800)
 organisms: List[Organism] = []
@@ -651,11 +652,16 @@ def save_simulation(req: SaveRequest):
     """Saves the current simulation state under a name."""
     global ticks, max_generation, simulation_speed, simulation_running, mutation_rate
     global world, organisms, predators, lineage_tracker, biographies, discovery_logs
+    global world_name
     
-    safe_name = "".join([c if c.isalnum() or c in [' ', '_', '-'] else '' for c in req.name]).strip()
+    target_name = req.name.strip() if req.name else world_name
+    safe_name = "".join([c if c.isalnum() or c in [' ', '_', '-'] else '' for c in target_name]).strip()
     safe_name = safe_name.replace(" ", "_")
     if not safe_name:
         return {"status": "ERROR", "message": "Invalid save name"}
+        
+    if req.name:
+        world_name = req.name.strip()
         
     filepath = os.path.join(SAVES_DIR, f"{safe_name}.pkl")
     
@@ -671,12 +677,13 @@ def save_simulation(req: SaveRequest):
             "predators": predators,
             "lineage_tracker": lineage_tracker,
             "biographies": biographies,
-            "discovery_logs": discovery_logs
+            "discovery_logs": discovery_logs,
+            "world_name": world_name
         }
         try:
             with open(filepath, 'wb') as f:
                 pickle.dump(state, f)
-            add_log("SYSTEM", f"Simulation successfully saved as '{req.name}'.")
+            add_log("SYSTEM", f"Simulation successfully saved as '{world_name}'.")
             return {"status": "SUCCESS", "id": safe_name}
         except Exception as e:
             return {"status": "ERROR", "message": str(e)}
@@ -686,7 +693,7 @@ def load_simulation(req: LoadRequest):
     """Loads a saved simulation state."""
     global ticks, max_generation, simulation_speed, simulation_running, mutation_rate
     global world, organisms, predators, lineage_tracker, biographies, discovery_logs
-    global active_specimen_id
+    global active_specimen_id, world_name
     
     filepath = os.path.join(SAVES_DIR, f"{req.id}.pkl")
     if not os.path.exists(filepath):
@@ -709,8 +716,9 @@ def load_simulation(req: LoadRequest):
             biographies = state.get("biographies", {})
             discovery_logs = state.get("discovery_logs", [])
             active_specimen_id = None
+            world_name = state.get("world_name", req.id.replace('_', ' '))
             
-            add_log("SYSTEM", f"Simulation loaded successfully from save state '{req.id.replace('_', ' ')}'.")
+            add_log("SYSTEM", f"Simulation loaded successfully from save state '{world_name}'.")
             return {"status": "SUCCESS"}
         except Exception as e:
             return {"status": "ERROR", "message": f"Pickle load error: {str(e)}"}
@@ -725,11 +733,11 @@ def delete_save(req: LoadRequest):
     return {"status": "ERROR", "message": "Save file not found"}
 
 @app.post("/api/saves/new")
-def new_simulation():
-    """Resets the entire simulation to a default fresh worldbox state."""
+def new_simulation(req: SaveRequest):
+    """Resets the entire simulation to a default fresh worldbox state with a name."""
     global ticks, max_generation, simulation_speed, simulation_running, mutation_rate
     global world, organisms, predators, lineage_tracker, biographies, discovery_logs
-    global active_specimen_id, _cat_scorecard
+    global active_specimen_id, _cat_scorecard, world_name
     
     with sim_lock:
         ticks = 0
@@ -745,8 +753,9 @@ def new_simulation():
         discovery_logs = []
         active_specimen_id = None
         _cat_scorecard = None
+        world_name = req.name.strip() if req.name else "My Terrarium"
         
-        add_log("SYSTEM", "A new primeval terrarium has been initialized by the Director.")
+        add_log("SYSTEM", f"A new primeval terrarium '{world_name}' has been initialized by the Director.")
     return {"status": "SUCCESS"}
 
 
@@ -754,7 +763,7 @@ def new_simulation():
 
 @app.websocket("/api/ws/state")
 async def websocket_endpoint(websocket: WebSocket):
-    global active_specimen_id
+    global active_specimen_id, world_name
     await websocket.accept()
     logger.info("WebSocket connection established.")
 
@@ -893,7 +902,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     "organisms": orgs_data,
                     "predators": preds_data,
                     "selected": selected_telemetry,
-                    "terrain": world.terrain
+                    "terrain": world.terrain,
+                    "world_name": world_name
                 }
 
             await websocket.send_text(json.dumps(state_payload))
