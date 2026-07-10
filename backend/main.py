@@ -346,13 +346,14 @@ def run_simulation_loop():
                     o.tick(world, organisms, predators)
                     world.handle_obstacle_collision(o)
 
-                    if o.is_dead:
+                if o.is_dead:
+                    if o.id not in biographies:
                         age_years = round(o.age / 1296000.0, 1)
-                        # Generate biography before removing
+                        # Generate biography
                         lineage_node = lineage_tracker.history.get(o.id)
                         traits = lineage_node.traits if lineage_node else {}
                         raw_mutations = lineage_node.mutations if lineage_node else []
-                        bio = generate_biography(o, o.death_reason, age_years, world.get_current_season(), traits, raw_mutations)
+                        bio = generate_biography(o, o.death_reason or 'STARVATION', age_years, world.get_current_season(), traits, raw_mutations)
                         biographies[o.id] = bio
 
                         # Varied death messages
@@ -371,21 +372,24 @@ def run_simulation_loop():
                                 f"Elder {o.name} lived {age_years} years before resting eternally.",
                             ],
                             'PREDATION': [
-                                f"{o.name} was hunted and consumed at age {age_years}.",
+                                f"{o.name} was hunted and consumed by a wolf at age {age_years}.",
                             ],
                             'ZAPPED': [
                                 f"{o.name} was removed by the Director at age {age_years}.",
+                            ],
+                            'DROWNED': [
+                                f"{o.name} drowned in deep water at age {age_years}.",
                             ]
                         }
-                        templates = death_templates.get(o.death_reason, [f"{o.name} died at {age_years}."])
+                        templates = death_templates.get(o.death_reason or 'STARVATION', [f"{o.name} died at {age_years}."])
                         add_log("DEATH", random.choice(templates), organism_id=o.id)
 
                         if active_specimen_id == o.id:
-                            pass  # Let WebSocket handle deselection
-                    else:
-                        living_orgs.append(o)
+                            pass
+                else:
+                    living_orgs.append(o)
 
-            organisms[:] = living_orgs + [o for o in organisms if o.is_dead]
+            organisms[:] = living_orgs
 
             # Tick Predators
             living_preds = []
