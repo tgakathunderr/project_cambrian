@@ -36,13 +36,14 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStartSimulation }) => {
   const [selectedDoc, setSelectedDoc] = useState<'README' | 'PRIVACY' | 'TERMS' | null>(null);
 
   // Fetch saves
-  const fetchSaves = () => {
-    setLoadingSaves(true);
+  const fetchSaves = (showLoading = true) => {
+    if (showLoading) setLoadingSaves(true);
     setSaveError(null);
     fetch('http://127.0.0.1:8000/api/saves')
       .then(res => res.json())
       .then(data => {
         setSaves(data);
+        setSaveError(null);
         setLoadingSaves(false);
       })
       .catch(() => {
@@ -52,8 +53,17 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStartSimulation }) => {
   };
 
   useEffect(() => {
-    fetchSaves();
+    fetchSaves(true);
   }, []);
+
+  // Poll for connection restoration if there is a save fetch error (e.g. backend startup delay)
+  useEffect(() => {
+    if (!saveError) return;
+    const interval = setInterval(() => {
+      fetchSaves(false);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [saveError]);
 
   // Handle New World
   const handleCreateNewWorld = async () => {
@@ -236,9 +246,18 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStartSimulation }) => {
               <span className="text-xs text-white/40 font-body">Scanning saved worlds...</span>
             </div>
           ) : saveError ? (
-            <div className="h-full flex flex-col justify-center items-center text-center text-white/45">
-              <span className="material-symbols-outlined text-2xl mb-2 text-[#ffb4ab]">error</span>
-              <p className="text-xs font-body">{saveError}</p>
+            <div className="h-full flex flex-col justify-center items-center text-center text-white/45 gap-4">
+              <div className="flex flex-col items-center">
+                <span className="material-symbols-outlined text-2xl mb-2 text-[#ffb4ab]">error</span>
+                <p className="text-xs font-body">{saveError}</p>
+              </div>
+              <button
+                onClick={() => fetchSaves(true)}
+                className="px-4 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-[#dec2a0]/50 text-white/70 hover:text-[#dec2a0] text-[10px] font-headline font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-xs">refresh</span>
+                Retry Connection
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-4">

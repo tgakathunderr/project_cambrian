@@ -1,6 +1,7 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
+const http = require('http');
 
 let mainWindow;
 let backendProcess;
@@ -67,10 +68,32 @@ function createWindow() {
   });
 }
 
+function checkBackendReady(callback) {
+  const req = http.request({
+    host: '127.0.0.1',
+    port: PORT,
+    path: '/api/saves',
+    method: 'GET',
+    timeout: 1000
+  }, (res) => {
+    if (res.statusCode === 200) {
+      callback();
+    } else {
+      setTimeout(() => checkBackendReady(callback), 250);
+    }
+  });
+
+  req.on('error', () => {
+    setTimeout(() => checkBackendReady(callback), 250);
+  });
+
+  req.end();
+}
+
 app.on('ready', () => {
   startBackend();
-  // Small delay to let the FastAPI server bind to local port before launching window
-  setTimeout(createWindow, 2000);
+  // Wait for the backend to be fully bound before creating window
+  checkBackendReady(createWindow);
 });
 
 app.on('window-all-closed', () => {
