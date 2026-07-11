@@ -27,7 +27,7 @@
     },
     "extraResources": [
       {
-        "from": "backend_dist/cambrian_backend",
+        "from": "dist/cambrian_backend",
         "to": "extraResources/cambrian_backend",
         "filter": [
           "**/*"

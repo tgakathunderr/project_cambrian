@@ -940,3 +940,13 @@ async def websocket_endpoint(websocket: WebSocket):
 
     except WebSocketDisconnect:
         logger.info("WebSocket disconnected.")
+
+
+if __name__ == '__main__':
+    # Entry point for the PyInstaller frozen binary.
+    # When run via `python -m uvicorn backend.main:app`, this block is skipped.
+    # When run as a standalone exe, this starts the server.
+    import multiprocessing
+    multiprocessing.freeze_support()
+    import uvicorn
+    uvicorn.run(app, host='127.0.0.1', port=8000, log_level='info')
