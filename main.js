@@ -29,7 +29,8 @@ function startBackend() {
     );
     backendProcess = spawn(binaryPath, [], {
       cwd: path.dirname(binaryPath),
-      stdio: 'inherit'
+      stdio: 'ignore',   // no console in packaged app — ignore stdio to prevent crash
+      detached: false
     });
   }
 
