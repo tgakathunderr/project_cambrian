@@ -3,6 +3,7 @@
 <div align="center">
   <img src="https://img.shields.io/badge/status-production--ready-brightgreen?style=flat-square" />
   <img src="https://img.shields.io/badge/version-1.0.0-blue?style=flat-square" />
+  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=flat-square" />
   <img src="https://img.shields.io/badge/electron-31-47848F?style=flat-square&logo=electron" />
   <img src="https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square&logo=python" />
   <img src="https://img.shields.io/badge/react-18-61DAFB?style=flat-square&logo=react" />
@@ -17,7 +18,7 @@
 
 ## What Is Project Cambrian?
 
-Project Cambrian is an evolutionary biology desktop application. Every organism runs an 8-organ neural brain, metabolizes energy, seeks mates, fears predators, and dies of natural causes. Their children inherit and mutate genetic traits across generations.
+Project Cambrian is a cross-platform evolutionary biology desktop application (Windows, macOS, Linux). Every organism runs an 8-organ neural brain, metabolizes energy, seeks mates, fears predators, and dies of natural causes. Their children inherit and mutate genetic traits across generations.
 
 As the **Director**, you can name specimens, choose mind architectures, spawn resources, paint terrain, trigger environmental catastrophes, and track multi-generational lineage trees.
 
@@ -75,9 +76,15 @@ project_cambrian/
 
 ## Installation & Setup
 
-### Desktop App (.exe Installer)
+### Desktop App Installers
 
-Download **`Cambrian Setup 1.0.0.exe`** from releases and run the setup wizard. The desktop app automatically handles starting the backend process silently on port 8000.
+Download the standalone package for your operating system from Releases:
+
+- **Windows**: `Cambrian Setup 1.0.0.exe`
+- **macOS**: `Cambrian-1.0.0.dmg`
+- **Linux**: `Cambrian-1.0.0.AppImage` / `.deb`
+
+The desktop app automatically handles starting the backend process silently on port 8000.
 
 ### Building From Source
 
@@ -98,7 +105,7 @@ npm install
 npm run build              # Inside frontend directory
 pyinstaller cambrian_backend.spec --noconfirm
 
-# 4. Package Windows installer (.exe)
+# 4. Package desktop installer
 cd ..
 npm run dist
 ```
