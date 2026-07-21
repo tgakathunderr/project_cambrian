@@ -36,7 +36,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libarchive-tools libopenblas-dev
+          sudo apt-get install -y libarchive-tools libopenblas-dev fakeroot dpkg
 
       - name: Install Python Dependencies, BIB Brain & PyInstaller
         run: |
@@ -58,8 +58,23 @@ jobs:
         run: |
           npm install
 
-      - name: Build & Publish Release Executables via Electron-Builder
+      - name: Build & Publish Release Executables via Electron-Builder (Windows)
+        if: matrix.os == 'windows-latest'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm run dist -- --publish always
+          npx electron-builder --win --publish always
+
+      - name: Build & Publish Release Executables via Electron-Builder (macOS)
+        if: matrix.os == 'macos-latest'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx electron-builder --mac --publish always
+
+      - name: Build & Publish Release Executables via Electron-Builder (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx electron-builder --linux AppImage deb --publish always

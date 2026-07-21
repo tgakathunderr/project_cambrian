@@ -19,6 +19,7 @@ pip-wheel-metadata/
 
 # ── PyInstaller / Frozen binaries ─────────────────────────────────────
 *.spec
+!cambrian_backend.spec
 cambrian_backend/
 cambrian_backend.exe
 
