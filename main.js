@@ -1,4 +1,5 @@
 const { app, BrowserWindow } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const { spawn } = require('child_process');
 const http = require('http');
@@ -95,6 +96,12 @@ app.on('ready', () => {
   startBackend();
   // Wait for the backend to be fully bound before creating window
   checkBackendReady(createWindow);
+
+  if (!isDev) {
+    autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+      console.log('Auto-updater check failed:', err);
+    });
+  }
 });
 
 app.on('window-all-closed', () => {

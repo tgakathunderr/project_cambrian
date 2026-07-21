@@ -8,6 +8,9 @@
     "pack": "electron-builder --dir",
     "dist": "electron-builder"
   },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  },
   "devDependencies": {
     "electron": "^31.0.0",
     "electron-builder": "^24.13.3"
@@ -15,8 +18,24 @@
   "build": {
     "appId": "com.unikailab.cambrian",
     "productName": "Cambrian",
+    "publish": {
+      "provider": "github",
+      "owner": "tgakathunderr",
+      "repo": "project_cambrian"
+    },
     "win": {
       "target": "nsis",
+      "icon": "build/icon.png"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icon.png"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
       "icon": "build/icon.png"
     },
     "nsis": {
