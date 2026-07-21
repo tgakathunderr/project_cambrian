@@ -31,7 +31,7 @@ class Organism:
     """
     def __init__(self, x, y, dna, sex='MALE', parent1_id=None, parent1_name=None,
                  parent2_id=None, parent2_name=None, generation=1, name=None,
-                 birth_season='SPRING'):
+                 birth_season='SPRING', mind_mode='INNATE'):
         self.id = uuid.uuid4().hex
         self.name = name if name else generate_organic_name()
 
@@ -42,6 +42,7 @@ class Organism:
         self.generation = generation
         self.dna = dna
         self.sex = sex  # 'MALE' or 'FEMALE'
+        self.mind_mode = mind_mode  # 'INNATE' or 'RAW'
 
         # Birth context
         self.birth_season = birth_season
@@ -69,6 +70,25 @@ class Organism:
         # Brain Integration
         self.brain = BIB()
         self._pending_reward = 0.0
+
+        # Pre-calibrate innate biological priors if mind_mode == 'INNATE'
+        if self.mind_mode == 'INNATE':
+            # Tune Basal Ganglia actor_weights (N_ACTIONS x SDR_SIZE)
+            # Action 0: MOVEMENT, Action 1: REPRODUCTION, Action 2: SENSITIVITY (Rotate), Action 5: NUTRITION
+            bg_actor = self.brain.bg.actor_weights
+            # Base forward movement bias
+            bg_actor[0, :] += 0.2
+            # Vision bits: 0..36 Food -> NUTRITION (Action 5) & MOVEMENT (Action 0)
+            bg_actor[5, 0:36] += 2.5
+            bg_actor[0, 0:36] += 1.2
+            # Vision bits: 36..72 Water -> NUTRITION (Action 5) & MOVEMENT (Action 0)
+            bg_actor[5, 36:72] += 2.5
+            bg_actor[0, 36:72] += 1.2
+            # Vision bits: 72..108 Opposite Sex -> REPRODUCTION (Action 1) & MOVEMENT (Action 0)
+            bg_actor[1, 72:108] += 2.5
+            bg_actor[0, 72:108] += 1.2
+            # Vision bits: 108..144 Wall -> SENSITIVITY (Action 2, Rotate)
+            bg_actor[2, 108:144] += 2.0
 
         # State tracking
         self.is_dead = False

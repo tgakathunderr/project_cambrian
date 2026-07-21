@@ -71,6 +71,7 @@ class SpawnRequest(BaseModel):
     name: Optional[str] = None
     sex: Optional[str] = None
     age_years: Optional[float] = None
+    mind_mode: Optional[str] = "INNATE"
 
 class RenameRequest(BaseModel):
     id: str
@@ -189,7 +190,7 @@ SEASONS_LABELS = {
 }
 
 # ─── Spawn Helpers ────────────────────────────────────────────────────
-def spawn_ancestor(x=None, y=None, name=None, sex=None, age_years=None):
+def spawn_ancestor(x=None, y=None, name=None, sex=None, age_years=None, mind_mode="INNATE"):
     """Spawns a generation 1 founder organism."""
     if x is None:
         x = random.uniform(50, world.width - 50)
@@ -200,7 +201,7 @@ def spawn_ancestor(x=None, y=None, name=None, sex=None, age_years=None):
     if sex is None:
         sex = random.choice(['MALE', 'FEMALE'])
     season = world.get_current_season()
-    org = Organism(x, y, dna, sex=sex, generation=1, name=name, birth_season=season)
+    org = Organism(x, y, dna, sex=sex, generation=1, name=name, birth_season=season, mind_mode=mind_mode)
     if age_years is not None:
         org.age = int(age_years * 1296000.0)
     organisms.append(org)
@@ -441,7 +442,7 @@ def spawn_element(req: SpawnRequest):
     """Creates an organism, predator, or world element from God Mode."""
     with sim_lock:
         if req.type == 'PREY':
-            org = spawn_ancestor(x=req.x, y=req.y, name=req.name, sex=req.sex, age_years=req.age_years)
+            org = spawn_ancestor(x=req.x, y=req.y, name=req.name, sex=req.sex, age_years=req.age_years, mind_mode=req.mind_mode or "INNATE")
             return {"status": "SUCCESS", "id": org.id, "name": org.name}
 
         elif req.type == 'WOLF':

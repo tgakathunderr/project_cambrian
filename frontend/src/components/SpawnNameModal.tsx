@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 
 interface SpawnNameModalProps {
   position: { x: number; y: number } | null;
-  onConfirm: (name: string, sex: 'MALE' | 'FEMALE', ageYears: number) => void;
+  onConfirm: (name: string, sex: 'MALE' | 'FEMALE', ageYears: number, mindMode: 'INNATE' | 'RAW') => void;
   onCancel: () => void;
 }
 
@@ -14,6 +14,7 @@ const SUGGESTIONS = [
 export const SpawnNameModal: React.FC<SpawnNameModalProps> = ({ position, onConfirm, onCancel }) => {
   const [name, setName] = useState(() => SUGGESTIONS[Math.floor(Math.random() * SUGGESTIONS.length)]);
   const [sex, setSex] = useState<'MALE' | 'FEMALE'>('MALE');
+  const [mindMode, setMindMode] = useState<'INNATE' | 'RAW'>('INNATE');
   const [ageYears, setAgeYears] = useState<number>(12); // default to 12 years (just reached maturity)
   
   const inputRef = useRef<HTMLInputElement>(null);
@@ -23,7 +24,7 @@ export const SpawnNameModal: React.FC<SpawnNameModalProps> = ({ position, onConf
   const handleConfirm = () => {
     const trimmed = name.trim();
     if (trimmed.length > 0) {
-      onConfirm(trimmed, sex, ageYears);
+      onConfirm(trimmed, sex, ageYears, mindMode);
     }
   };
 
@@ -51,7 +52,7 @@ export const SpawnNameModal: React.FC<SpawnNameModalProps> = ({ position, onConf
         </div>
 
         <p className="font-body text-[11px] text-white/35 mb-4 leading-relaxed">
-          Configure genetic identity and age before placing this specimen in the biosphere.
+          Configure genetic identity, mind architecture, and age before placing this specimen.
         </p>
 
         {/* 1. Name input */}
@@ -86,7 +87,43 @@ export const SpawnNameModal: React.FC<SpawnNameModalProps> = ({ position, onConf
           </div>
         </div>
 
-        {/* 2. Gender Selection */}
+        {/* 2. Mind Mode Selection */}
+        <div className="mb-4">
+          <label className="text-[9px] text-white/30 uppercase tracking-widest font-body block mb-1.5">Mind Architecture</label>
+          <div className="grid grid-cols-2 gap-2 mb-1">
+            <button
+              type="button"
+              onClick={() => setMindMode('INNATE')}
+              className={`py-2 px-2.5 border rounded-xl font-headline text-left transition-all ${
+                mindMode === 'INNATE'
+                  ? 'bg-[#05f094]/15 border-[#05f094]/40 text-[#05f094]'
+                  : 'bg-white/3 border-white/6 text-white/40 hover:border-white/12 hover:text-white/60'
+              }`}
+            >
+              <div className="text-xs font-bold flex items-center gap-1">
+                <span>🌱 Innate</span>
+              </div>
+              <div className="text-[9px] text-white/35 font-body mt-0.5">Pre-tuned biological instincts</div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMindMode('RAW')}
+              className={`py-2 px-2.5 border rounded-xl font-headline text-left transition-all ${
+                mindMode === 'RAW'
+                  ? 'bg-[#dec2a0]/15 border-[#dec2a0]/40 text-[#dec2a0]'
+                  : 'bg-white/3 border-white/6 text-white/40 hover:border-white/12 hover:text-white/60'
+              }`}
+            >
+              <div className="text-xs font-bold flex items-center gap-1">
+                <span>⚡ Raw</span>
+              </div>
+              <div className="text-[9px] text-white/35 font-body mt-0.5">Un-trained blank brain</div>
+            </button>
+          </div>
+        </div>
+
+        {/* 3. Gender Selection */}
         <div className="mb-4">
           <label className="text-[9px] text-white/30 uppercase tracking-widest font-body block mb-1.5">Biological Sex</label>
           <div className="flex gap-2">
@@ -109,7 +146,7 @@ export const SpawnNameModal: React.FC<SpawnNameModalProps> = ({ position, onConf
           </div>
         </div>
 
-        {/* 3. Age Selection */}
+        {/* 4. Age Selection */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-1.5">
             <label className="text-[9px] text-white/30 uppercase tracking-widest font-body">Spawn Age</label>

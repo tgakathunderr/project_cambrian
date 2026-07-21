@@ -8,6 +8,10 @@ import { BiographyCard } from './components/BiographyCard';
 import { SpawnNameModal } from './components/SpawnNameModal';
 import { ZapConfirmModal } from './components/ZapConfirmModal';
 import { MainMenu } from './components/MainMenu';
+import { WalkthroughOverlay } from './components/WalkthroughOverlay';
+import { AchievementsModal, ACHIEVEMENTS_DEF } from './components/AchievementsModal';
+import type { Achievement } from './components/AchievementsModal';
+import { AchievementToast } from './components/AchievementToast';
 
 // ─── Type Definitions ─────────────────────────────────────────────────
 interface OrganismData {
@@ -111,10 +115,63 @@ export const App: React.FC = () => {
   // Discovery Log
   const [logs, setLogs] = useState<LogEntry[]>([]);
 
-  // Modals
+  // Modals & Overlays
   const [biographyOrgId, setBiographyOrgId] = useState<string | null>(null);
   const [spawnPending, setSpawnPending] = useState<{ x: number; y: number } | null>(null);
   const [zapPending, setZapPending] = useState<{ id: string; name: string } | null>(null);
+  const [showWalkthrough, setShowWalkthrough] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
+  const [unlockedAchievements, setUnlockedAchievements] = useState<Record<string, string>>(() => {
+    try {
+      const saved = localStorage.getItem('cambrian_achievements');
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
+  const [currentToast, setCurrentToast] = useState<Achievement | null>(null);
+
+  // Helper to unlock an achievement
+  const unlockAchievement = useCallback((id: string) => {
+    setUnlockedAchievements(prev => {
+      if (prev[id]) return prev;
+      const timestamp = new Date().toLocaleDateString();
+      const updated = { ...prev, [id]: timestamp };
+      try { localStorage.setItem('cambrian_achievements', JSON.stringify(updated)); } catch {}
+
+      const def = ACHIEVEMENTS_DEF.find(a => a.id === id);
+      if (def) {
+        setCurrentToast({ ...def, unlocked: true, unlockedAt: timestamp });
+      }
+      return updated;
+    });
+  }, []);
+
+  // Trigger walkthrough on fresh simulation launch
+  useEffect(() => {
+    if (view === 'SIMULATION') {
+      try {
+        const completed = localStorage.getItem('cambrian_walkthrough_completed');
+        if (!completed) setShowWalkthrough(true);
+      } catch {}
+    }
+  }, [view]);
+
+  // Evaluators for automated achievement triggers
+  useEffect(() => {
+    if (organisms.length > 0) unlockAchievement('day_zero');
+    if (maxGeneration >= 2) unlockAchievement('firstborn');
+    if (maxGeneration >= 5) unlockAchievement('gen_v_dynasty');
+    if (maxGeneration >= 25 && organisms.length >= 50) unlockAchievement('millennium_civ');
+    if (organisms.some(o => o.age >= 103680000)) unlockAchievement('centenarian');
+    if (organisms.some(o => o.dopamine >= 0.90)) unlockAchievement('dopamine_rush');
+    if (organisms.some(o => o.cortisol >= 0.95)) unlockAchievement('cortisol_panic');
+    if (organisms.some(o => o.speed >= 9.5)) unlockAchievement('speedster_lineage');
+    if (organisms.some(o => o.size >= 25.0)) unlockAchievement('behemoth');
+    if (catastrophe && organisms.length > 0) unlockAchievement('catastrophe_survivor');
+  }, [organisms, maxGeneration, catastrophe, unlockAchievement]);
+
+  useEffect(() => {
+    if (biographyOrgId) unlockAchievement('the_record');
+  }, [biographyOrgId, unlockAchievement]);
 
   // WebSocket
   const wsRef = useRef<WebSocket | null>(null);
@@ -199,11 +256,11 @@ export const App: React.FC = () => {
     setSelectedId(null);
   }, [zapPending]);
 
-  const handleSpawnElement = useCallback((x: number, y: number, type: string, name?: string, sex?: string, ageYears?: number) => {
+  const handleSpawnElement = useCallback((x: number, y: number, type: string, name?: string, sex?: string, ageYears?: number, mindMode?: string) => {
     fetch('http://127.0.0.1:8000/api/spawn', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ x, y, type, name: name || null, sex: sex || null, age_years: ageYears || null })
+      body: JSON.stringify({ x, y, type, name: name || null, sex: sex || null, age_years: ageYears || null, mind_mode: mindMode || 'INNATE' })
     }).catch(() => {});
   }, []);
 
@@ -219,11 +276,12 @@ export const App: React.FC = () => {
     setSpawnPending({ x, y });
   }, []);
 
-  const handleSpawnNameConfirm = useCallback((name: string, sex: 'MALE' | 'FEMALE', ageYears: number) => {
+  const handleSpawnNameConfirm = useCallback((name: string, sex: 'MALE' | 'FEMALE', ageYears: number, mindMode: 'INNATE' | 'RAW') => {
     if (!spawnPending) return;
-    handleSpawnElement(spawnPending.x, spawnPending.y, 'PREY', name, sex, ageYears);
+    handleSpawnElement(spawnPending.x, spawnPending.y, 'PREY', name, sex, ageYears, mindMode);
     setSpawnPending(null);
-  }, [spawnPending, handleSpawnElement]);
+    unlockAchievement('day_zero');
+  }, [spawnPending, handleSpawnElement, unlockAchievement]);
 
   const handleCatastrophe = useCallback((type: string) => {
     fetch('http://127.0.0.1:8000/api/catastrophe', {
@@ -321,6 +379,24 @@ export const App: React.FC = () => {
         <div className="flex items-center gap-3">
           {/* Connection indicator */}
           <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-[#8da89b] animate-pulse' : 'bg-[#ffb4ab]'}`} />
+
+          {/* Trophy Button */}
+          <button
+            onClick={() => setShowAchievements(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-panel border border-[#dec2a0]/25 text-[#dec2a0] hover:bg-[#dec2a0]/12 text-[10px] font-headline font-bold uppercase tracking-wider transition-all shadow-sm"
+          >
+            <span className="material-symbols-outlined text-xs">emoji_events</span>
+            <span>Trophies ({Object.keys(unlockedAchievements).length}/20)</span>
+          </button>
+
+          {/* Help / Walkthrough Button */}
+          <button
+            onClick={() => setShowWalkthrough(true)}
+            className="flex items-center justify-center w-8 h-8 rounded-xl glass-panel border border-white/10 text-white/40 hover:text-white/80 hover:bg-white/8 transition-all"
+            title="Replay Director Tutorial"
+          >
+            <span className="material-symbols-outlined text-sm">help</span>
+          </button>
 
           {/* Tab nav */}
           <nav className="flex glass-panel rounded-xl p-0.5 gap-0.5 border border-white/6">
@@ -547,6 +623,27 @@ export const App: React.FC = () => {
           onCancel={() => setZapPending(null)}
         />
       )}
+
+      {showWalkthrough && (
+        <WalkthroughOverlay
+          onComplete={() => {
+            setShowWalkthrough(false);
+            try { localStorage.setItem('cambrian_walkthrough_completed', 'true'); } catch {}
+          }}
+        />
+      )}
+
+      {showAchievements && (
+        <AchievementsModal
+          unlockedState={unlockedAchievements}
+          onClose={() => setShowAchievements(false)}
+        />
+      )}
+
+      <AchievementToast
+        achievement={currentToast}
+        onDismiss={() => setCurrentToast(null)}
+      />
     </div>
   );
 };
