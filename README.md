@@ -11,15 +11,15 @@
 
 <br/>
 
-> **A living digital terrarium.** Watch virtual organisms evolve, compete, mate, and die — governed by a genuine neural architecture (BIB) and true genetic inheritance.
+> **A living digital terrarium.** Watch virtual organisms evolve, compete, mate, and die — governed by a genuine neural brain architecture and true genetic inheritance.
 
 ---
 
 ## What Is Project Cambrian?
 
-Project Cambrian is a **first-principles digital biology simulator** packaged as a standalone desktop application. Every organism runs an 8-organ neural brain (powered by the custom [BIB framework](https://github.com/tgakathunderr/bib)), metabolizes energy, seeks mates, fears predators, and dies of natural causes. Their children inherit and mutate genetic traits across generations.
+Project Cambrian is an evolutionary biology desktop application. Every organism runs an 8-organ neural brain, metabolizes energy, seeks mates, fears predators, and dies of natural causes. Their children inherit and mutate genetic traits across generations.
 
-You are the **Director** — you can name specimens, choose mind architectures, spawn resources, paint terrain, trigger environmental catastrophes, and track multi-generational lineage trees.
+As the **Director**, you can name specimens, choose mind architectures, spawn resources, paint terrain, trigger environmental catastrophes, and track multi-generational lineage trees.
 
 ---
 
@@ -27,8 +27,8 @@ You are the **Director** — you can name specimens, choose mind architectures, 
 
 | Feature | Description |
 |---|---|
-| 🧠 **Real Neural Brains** | Powered by [BIB](https://github.com/tgakathunderr/bib) — 8-organ spiking-inspired architecture with Dopamine, Serotonin, Cortisol, Acetylcholine, and Norepinephrine |
-| 🌱/⚡ **Mind Architecture Selector** | Choose `Innate` mode (pre-calibrated biological instinct priors) or `Raw` mode (100% tabula rasa Hebbian learning from scratch) |
+| 🧠 **Real Neural Brains** | Powered by an 8-organ spiking-inspired architecture with Dopamine, Serotonin, Cortisol, Acetylcholine, and Norepinephrine |
+| 🌱/⚡ **Mind Architecture Selector** | Choose `Innate` mode (pre-calibrated biological instinct priors) or `Raw` mode (tabula rasa learning from scratch) |
 | 🏆 **20-Tiered Trophies System** | Complete 20 achievements across 4 tiers (Tier 1 Basic → Tier 4 Theoretical Miracles) with persistent progress tracking |
 | 🚀 **Director's Orientation** | Interactive 30-second onboarding walkthrough guiding users through the biosphere, telemetry, metabolism, and lineage |
 | 🧬 **Genetic Inheritance** | DNA crossover + mutation across unlimited generations. Mutatable traits: speed, size, vision range, metabolism |
@@ -37,7 +37,7 @@ You are the **Director** — you can name specimens, choose mind architectures, 
 | 🌳 **Interactive Lineage Tree** | Ancestral family tree of every creature born with clickable biography nodes |
 | ⚡ **God Mode Controls** | Name & place specimens, drop food/water, paint terrain, trigger catastrophes, and zap specimens |
 | 🔬 **Brain Chemistry Telemetry** | Live fluid cylinders for DA, 5-HT, ACh, and Cortisol with real-time numeric readouts |
-| 🎨 **Obsidian Terrarium UI** | Ambient WebGL fluid shader reacting to stress/reward, 60fps breathing organisms, and directional comet trails |
+| 🎨 **Obsidian Terrarium UI** | Ambient WebGL fluid shader reacting to stress/reward, 60fps breathing organisms, and directional motion trails |
 
 ---
 
@@ -47,7 +47,7 @@ You are the **Director** — you can name specimens, choose mind architectures, 
 project_cambrian/
 ├── backend/               # Python — FastAPI simulation server
 │   ├── main.py            # HTTP + WebSocket API (30Hz state stream)
-│   ├── organism.py        # BIB-brained organism with Innate/Raw mind modes
+│   ├── organism.py        # Brain-driven organism with Innate/Raw mind modes
 │   ├── predator.py        # Predator with hunting reinforcement learning
 │   ├── world.py           # Resources, seasons, catastrophe engine
 │   └── genetics.py        # DNA, crossover, mutation, lineage tracker
@@ -75,49 +75,42 @@ project_cambrian/
 
 ## Installation & Setup
 
-### Option 1 — Desktop App (.exe Installer)
+### Desktop App (.exe Installer)
 
 Download **`Cambrian Setup 1.0.0.exe`** from releases and run the setup wizard. The desktop app automatically handles starting the backend process silently on port 8000.
 
-### Option 2 — Building From Source (Developers)
+### Building From Source
 
 #### Prerequisites
 - Python 3.10+
 - Node.js 18+
-- The [BIB library](https://github.com/tgakathunderr/bib) installed
 
 ```bash
-# 1. Clone & install BIB brain
-git clone https://github.com/tgakathunderr/bib
-pip install -e ./bib
-
-# 2. Install backend dependencies
+# 1. Install backend dependencies
 cd project_cambrian
 pip install fastapi uvicorn numpy numba pyinstaller
 
-# 3. Install frontend dependencies
+# 2. Install frontend dependencies
 cd frontend
 npm install
 
-# 4. Build production static bundle & frozen backend
+# 3. Build production static bundle & frozen backend
 npm run build              # Inside frontend directory
 pyinstaller cambrian_backend.spec --noconfirm
 
-# 5. Package Windows installer (.exe)
+# 4. Package Windows installer (.exe)
 cd ..
 npm run dist
 ```
 
 ---
 
-## License & Intellectual Property
+## License
 
-**Proprietary Software — All Rights Reserved.**
-
-Project Cambrian is proprietary, closed-source software. Unauthorized copying, distribution, modification, reverse engineering, or public hosting of this repository or its compiled binaries is strictly prohibited without explicit written permission from the author.
+Copyright (c) 2026 UnikAI Lab. All rights reserved. Proprietary software — see [LICENSE](LICENSE).
 
 ---
 
 <div align="center">
-  <sub>Designed & Developed by UnikAI Lab · Built with BIB · FastAPI · React · Electron</sub>
+  <sub>Designed & Developed by UnikAI Lab</sub>
 </div>
