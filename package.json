@@ -1,6 +1,7 @@
 {
   "name": "project_cambrian",
   "version": "1.0.0",
+  "author": "UnikAI Lab <unikailab@proton.me>",
   "description": "Premium desktop digital terrarium and biological simulation",
   "main": "main.js",
   "scripts": {
