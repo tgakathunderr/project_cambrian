@@ -12,6 +12,8 @@ jobs:
   release:
     name: Build ${{ matrix.os }} Installer
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
     strategy:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
@@ -23,7 +25,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -36,10 +38,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libarchive-tools libopenblas-dev
 
-      - name: Install Python Dependencies & PyInstaller
+      - name: Install Python Dependencies, BIB Brain & PyInstaller
         run: |
           python -m pip install --upgrade pip
           pip install numpy numba fastapi uvicorn pyinstaller
+          pip install git+https://github.com/tgakathunderr/bib.git
 
       - name: Build Frontend Production Bundle
         run: |
