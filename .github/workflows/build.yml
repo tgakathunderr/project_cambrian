@@ -2,8 +2,11 @@ name: Build & Release Project Cambrian
 
 on:
   push:
+    branches:
+      - master
     tags:
       - 'v*'
+  workflow_dispatch:
 
 jobs:
   release:
