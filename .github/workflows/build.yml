@@ -23,6 +23,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Checkout BIB Brain Repository
+        uses: actions/checkout@v4
+        with:
+          repository: 'tgakathunderr/bib'
+          path: '../bib'
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -44,7 +50,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install "numpy<2.0.0" numba pyinstaller
           pip install -r backend/requirements.txt
-          pip install git+https://github.com/tgakathunderr/bib.git
+          pip install -e ../bib
 
       - name: Build Frontend Production Bundle
         run: |
