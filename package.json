@@ -19,6 +19,9 @@
   "build": {
     "appId": "com.unikailab.cambrian",
     "productName": "Cambrian",
+    "directories": {
+      "output": "release"
+    },
     "publish": {
       "provider": "github",
       "owner": "tgakathunderr",
