@@ -23,6 +23,7 @@ pip-wheel-metadata/
 !cambrian_backend.spec
 cambrian_backend/
 cambrian_backend.exe
+backend_dist/
 
 # ── Node / Frontend ───────────────────────────────────────────────────
 node_modules/

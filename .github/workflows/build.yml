@@ -53,7 +53,7 @@ jobs:
 
       - name: Compile Frozen Python Backend
         run: |
-          pyinstaller cambrian_backend.spec --noconfirm
+          pyinstaller cambrian_backend.spec --noconfirm --distpath backend_dist
 
       - name: Install Electron Build Dependencies
         run: |
@@ -64,18 +64,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npx electron-builder --win --publish always
+          npx electron-builder --win --publish always -c.extraResources[0].from=backend_dist/cambrian_backend
 
       - name: Build & Publish Release Executables via Electron-Builder (macOS)
         if: matrix.os == 'macos-latest'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npx electron-builder --mac --publish always
+          npx electron-builder --mac --publish always -c.extraResources[0].from=backend_dist/cambrian_backend
 
       - name: Build & Publish Release Executables via Electron-Builder (Linux)
         if: matrix.os == 'ubuntu-latest'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npx electron-builder --linux AppImage deb --publish always
+          npx electron-builder --linux AppImage deb --publish always -c.extraResources[0].from=backend_dist/cambrian_backend
