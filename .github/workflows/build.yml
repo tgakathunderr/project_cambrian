@@ -31,7 +31,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
       - name: Install System Dependencies (Linux)
         if: matrix.os == 'ubuntu-latest'
@@ -55,21 +55,6 @@ jobs:
       - name: Compile Frozen Python Backend
         run: |
           pyinstaller cambrian_backend.spec --noconfirm
-
-      - name: Configure CI/CD package paths
-        run: |
-          node -e "
-            const fs = require('fs');
-            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-            pkg.build.extraResources[0].from = 'backend_dist/cambrian_backend';
-            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-            if (fs.existsSync('dist/cambrian_backend')) {
-              if (!fs.existsSync('backend_dist')) {
-                fs.mkdirSync('backend_dist');
-              }
-              fs.renameSync('dist/cambrian_backend', 'backend_dist/cambrian_backend');
-            }
-          "
 
       - name: Install Electron Build Dependencies
         run: |
