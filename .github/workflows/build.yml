@@ -55,6 +55,15 @@ jobs:
         run: |
           pyinstaller cambrian_backend.spec --noconfirm --distpath backend_dist
 
+      - name: Configure CI/CD package paths
+        run: |
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.build.extraResources[0].from = 'backend_dist/cambrian_backend';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+
       - name: Install Electron Build Dependencies
         run: |
           npm install
@@ -64,18 +73,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npx electron-builder --win --publish always -c.extraResources[0].from=backend_dist/cambrian_backend
+          npx electron-builder --win --publish always
 
       - name: Build & Publish Release Executables via Electron-Builder (macOS)
         if: matrix.os == 'macos-latest'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npx electron-builder --mac --publish always -c.extraResources[0].from=backend_dist/cambrian_backend
+          npx electron-builder --mac --publish always
 
       - name: Build & Publish Release Executables via Electron-Builder (Linux)
         if: matrix.os == 'ubuntu-latest'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npx electron-builder --linux AppImage deb --publish always -c.extraResources[0].from=backend_dist/cambrian_backend
+          npx electron-builder --linux AppImage deb --publish always
