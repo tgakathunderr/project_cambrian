@@ -30,13 +30,25 @@ function startBackend() {
     );
     backendProcess = spawn(binaryPath, [], {
       cwd: path.dirname(binaryPath),
-      stdio: 'ignore',   // no console in packaged app — ignore stdio to prevent crash
+      stdio: ['ignore', 'pipe', 'pipe'],   // capture stdio to prevent silent crashes
       detached: false
+    });
+
+    backendProcess.stdout.on('data', (data) => {
+      console.log(`[backend stdout]: ${data.toString()}`);
+    });
+
+    backendProcess.stderr.on('data', (data) => {
+      console.error(`[backend stderr]: ${data.toString()}`);
     });
   }
 
   backendProcess.on('error', (err) => {
     console.error('Failed to start backend process:', err);
+  });
+
+  backendProcess.on('exit', (code, signal) => {
+    console.log(`Backend process exited with code ${code} and signal ${signal}`);
   });
 }
 

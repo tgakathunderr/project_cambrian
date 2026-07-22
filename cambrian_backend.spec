@@ -1,12 +1,19 @@
 # -*- mode: python ; coding: utf-8 -*-
+from PyInstaller.utils.hooks import collect_submodules
 
+hidden_imports = (
+    collect_submodules('uvicorn')
+    + collect_submodules('websockets')
+    + collect_submodules('numba')
+    + collect_submodules('bib')
+)
 
 a = Analysis(
     ['backend/main.py'],
     pathex=['.', '..'],
     binaries=[],
     datas=[],
-    hiddenimports=[],
+    hiddenimports=hidden_imports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
